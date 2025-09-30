@@ -7,3 +7,9 @@ plugins {
 }
 
 version = "0.3.0"
+
+sourceSets {
+	main {
+		java.srcDirs = ['src']
+	}
+}

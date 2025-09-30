@@ -22,7 +22,10 @@
  * THE SOFTWARE.
  */
 
-package net.minecrell.terminalconsole.util;
+package net.fabricmc.log4j;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.config.Configuration;
@@ -39,12 +42,9 @@ import org.apache.logging.log4j.core.layout.PatternSelector;
 import org.apache.logging.log4j.core.pattern.PatternFormatter;
 import org.apache.logging.log4j.core.pattern.PatternParser;
 import org.apache.logging.log4j.util.PerformanceSensitive;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
-
-// TODO: Consider moving this into a separate project
+//CHECKSTYLE.OFF: JavadocStyle - Checkstyle doesn't like the XML in the javadoc
 
 /**
  * A {@link PatternSelector} that selects patterns based on the logger name.
@@ -66,97 +66,95 @@ import java.util.List;
 @Plugin(name = "LoggerNamePatternSelector", category = Node.CATEGORY, elementType = PatternSelector.ELEMENT_TYPE)
 @PerformanceSensitive("allocation")
 public final class LoggerNamePatternSelector implements PatternSelector {
+	private static class LoggerNameSelector {
+		private final String name;
+		private final boolean isPackage;
+		private final PatternFormatter[] formatters;
 
-    private static class LoggerNameSelector {
+		LoggerNameSelector(String name, PatternFormatter[] formatters) {
+			this.name = name;
+			this.isPackage = name.endsWith(".");
+			this.formatters = formatters;
+		}
 
-        private final String name;
-        private final boolean isPackage;
-        private final PatternFormatter[] formatters;
+		PatternFormatter[] get() {
+			return this.formatters;
+		}
 
-        LoggerNameSelector(String name, PatternFormatter[] formatters) {
-            this.name = name;
-            this.isPackage = name.endsWith(".");
-            this.formatters = formatters;
-        }
+		boolean test(String s) {
+			return this.isPackage ? s.startsWith(this.name) : s.equals(this.name);
+		}
+	}
 
-        PatternFormatter[] get() {
-            return this.formatters;
-        }
+	private final PatternFormatter[] defaultFormatters;
+	private final List<LoggerNameSelector> formatters = new ArrayList<>();
 
-        boolean test(String s) {
-            return this.isPackage ? s.startsWith(this.name) : s.equals(this.name);
-        }
+	/**
+	 * Constructs a new {@link LoggerNamePatternSelector}.
+	 *
+	 * @param defaultPattern The default pattern to use if no logger name matches
+	 * @param properties The pattern match rules to use
+	 * @param alwaysWriteExceptions Write exceptions even if pattern does not
+	 *     include exception conversion
+	 * @param disableAnsi If true, disable all ANSI escape codes
+	 * @param noConsoleNoAnsi If true and {@link System#console()} is null,
+	 *     disable ANSI escape codes
+	 * @param config The configuration
+	 */
+	private LoggerNamePatternSelector(String defaultPattern, PatternMatch[] properties,
+									boolean alwaysWriteExceptions, boolean disableAnsi, boolean noConsoleNoAnsi, Configuration config) {
+		PatternParser parser = PatternLayout.createPatternParser(config);
+		PatternFormatter[] emptyFormatters = new PatternFormatter[0];
+		this.defaultFormatters = parser.parse(defaultPattern, alwaysWriteExceptions, disableAnsi, noConsoleNoAnsi)
+				.toArray(emptyFormatters);
+		for (PatternMatch property : properties) {
+			PatternFormatter[] formatters = parser.parse(property.getPattern(), alwaysWriteExceptions, disableAnsi, noConsoleNoAnsi)
+					.toArray(emptyFormatters);
+			for (String name : property.getKey().split(",")) {
+				this.formatters.add(new LoggerNameSelector(name, formatters));
+			}
+		}
+	}
 
-    }
+	@Override
+	public PatternFormatter[] getFormatters(LogEvent event) {
+		final @Nullable String loggerName = event.getLoggerName();
 
-    private final PatternFormatter[] defaultFormatters;
-    private final List<LoggerNameSelector> formatters = new ArrayList<>();
+		if (loggerName != null) {
+			//noinspection ForLoopReplaceableByForEach
+			for (int i = 0; i < this.formatters.size(); i++) {
+				LoggerNameSelector selector = this.formatters.get(i);
 
-    /**
-     * Constructs a new {@link LoggerNamePatternSelector}.
-     *
-     * @param defaultPattern The default pattern to use if no logger name matches
-     * @param properties The pattern match rules to use
-     * @param alwaysWriteExceptions Write exceptions even if pattern does not
-     *     include exception conversion
-     * @param disableAnsi If true, disable all ANSI escape codes
-     * @param noConsoleNoAnsi If true and {@link System#console()} is null,
-     *     disable ANSI escape codes
-     * @param config The configuration
-     */
-    protected LoggerNamePatternSelector(String defaultPattern, PatternMatch[] properties,
-            boolean alwaysWriteExceptions, boolean disableAnsi, boolean noConsoleNoAnsi, Configuration config) {
-        PatternParser parser = PatternLayout.createPatternParser(config);
-        PatternFormatter[] emptyFormatters = new PatternFormatter[0];
-        this.defaultFormatters = parser.parse(defaultPattern, alwaysWriteExceptions, disableAnsi, noConsoleNoAnsi)
-                .toArray(emptyFormatters);
-        for (PatternMatch property : properties) {
-            PatternFormatter[] formatters = parser.parse(property.getPattern(), alwaysWriteExceptions, disableAnsi, noConsoleNoAnsi)
-                    .toArray(emptyFormatters);
-            for (String name : property.getKey().split(",")) {
-                this.formatters.add(new LoggerNameSelector(name, formatters));
-            }
-        }
-    }
+				if (selector.test(loggerName)) {
+					return selector.get();
+				}
+			}
+		}
 
-    @Override
-    public PatternFormatter[] getFormatters(LogEvent event) {
-        final @Nullable String loggerName = event.getLoggerName();
-        if (loggerName != null) {
-            //noinspection ForLoopReplaceableByForEach
-            for (int i = 0; i < this.formatters.size(); i++) {
-                LoggerNameSelector selector = this.formatters.get(i);
-                if (selector.test(loggerName)) {
-                    return selector.get();
-                }
-            }
-        }
+		return this.defaultFormatters;
+	}
 
-        return this.defaultFormatters;
-    }
-
-    /**
-     * Creates a new {@link LoggerNamePatternSelector}.
-     *
-     * @param defaultPattern The default pattern to use if no logger name matches
-     * @param properties The pattern match rules to use
-     * @param alwaysWriteExceptions Write exceptions even if pattern does not
-     *     include exception conversion
-     * @param disableAnsi If true, disable all ANSI escape codes
-     * @param noConsoleNoAnsi If true and {@link System#console()} is null,
-     *     disable ANSI escape codes
-     * @param config The configuration
-     * @return The new pattern selector
-     */
-    @PluginFactory
-    public static LoggerNamePatternSelector createSelector(
-            @Required(message = "Default pattern is required") @PluginAttribute(value = "defaultPattern") String defaultPattern,
-            @PluginElement("PatternMatch") PatternMatch[] properties,
-            @PluginAttribute(value = "alwaysWriteExceptions", defaultBoolean = true) boolean alwaysWriteExceptions,
-            @PluginAttribute("disableAnsi") boolean disableAnsi,
-            @PluginAttribute("noConsoleNoAnsi") boolean noConsoleNoAnsi,
-            @PluginConfiguration Configuration config) {
-        return new LoggerNamePatternSelector(defaultPattern, properties, alwaysWriteExceptions, disableAnsi, noConsoleNoAnsi, config);
-    }
-
+	/**
+	 * Creates a new {@link LoggerNamePatternSelector}.
+	 *
+	 * @param defaultPattern The default pattern to use if no logger name matches
+	 * @param properties The pattern match rules to use
+	 * @param alwaysWriteExceptions Write exceptions even if pattern does not
+	 *     include exception conversion
+	 * @param disableAnsi If true, disable all ANSI escape codes
+	 * @param noConsoleNoAnsi If true and {@link System#console()} is null,
+	 *     disable ANSI escape codes
+	 * @param config The configuration
+	 * @return The new pattern selector
+	 */
+	@PluginFactory
+	public static LoggerNamePatternSelector createSelector(
+			@Required(message = "Default pattern is required") @PluginAttribute(value = "defaultPattern") String defaultPattern,
+			@PluginElement("PatternMatch") PatternMatch[] properties,
+			@PluginAttribute(value = "alwaysWriteExceptions", defaultBoolean = true) boolean alwaysWriteExceptions,
+			@PluginAttribute("disableAnsi") boolean disableAnsi,
+			@PluginAttribute("noConsoleNoAnsi") boolean noConsoleNoAnsi,
+			@PluginConfiguration Configuration config) {
+		return new LoggerNamePatternSelector(defaultPattern, properties, alwaysWriteExceptions, disableAnsi, noConsoleNoAnsi, config);
+	}
 }
