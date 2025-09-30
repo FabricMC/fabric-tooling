@@ -1,0 +1,40 @@
+plugins {
+	id "java-library"
+	id "fabric-java-8"
+	id "fabric-java-formatting"
+	id "fabric-java-publishing"
+	id "fabric-junit"
+	id "fabric-versioning"
+}
+
+version = "0.0.0"
+
+repositories {
+	maven {
+		name = "Fabric"
+		url = "https://maven.fabricmc.net/"
+	}
+}
+
+dependencies {
+	api "org.ow2.asm:asm:9.8"
+	api "org.ow2.asm:asm-commons:9.8" // For Remapper
+	api "net.fabricmc:tiny-remapper:0.11.2" // For validator
+
+	compileOnly "org.jetbrains:annotations:26.0.2"
+}
+
+javadoc {
+	options {
+		source = "8"
+		encoding = "UTF-8"
+		charSet = "UTF-8"
+		memberLevel = JavadocMemberLevel.PACKAGE
+		links(
+			"https://asm.ow2.io/javadoc/",
+			"https://docs.oracle.com/javase/8/docs/api/"
+		)
+		// Disable the crazy super-strict doclint tool in Java 8
+		addStringOption("Xdoclint:none", "-quiet")
+	}
+}

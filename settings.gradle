@@ -1,4 +1,5 @@
 rootProject.name = 'fabric-tooling'
 
+include "class-tweaker"
 include "fabric-log4j-util"
 include "dev-launch-injector"
