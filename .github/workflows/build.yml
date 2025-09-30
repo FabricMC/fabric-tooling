@@ -6,7 +6,7 @@ jobs:
   build:
     strategy:
       matrix:
-        platform: [ ubuntu-24.04 ]
+        platform: [ ubuntu-24.04, windows-2025 ]
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/setup-java@v4

@@ -10,6 +10,7 @@ on:
           - class-tweaker
           - dev-launch-injector
           - fabric-log4j-util
+          - fabric-loom-native
 
 permissions:
   contents: write
@@ -17,6 +18,23 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    if: ${{ inputs.project != 'fabric-loom-native' }}
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'microsoft'
+          java-version: '21'
+      - uses: actions/checkout@v4
+      - run: ./gradlew ":$PROJECT:build" ":$PROJECT:publish" --stacktrace --warning-mode=fail
+        env:
+          PROJECT: ${{ inputs.project }}
+          MAVEN_URL: ${{ secrets.MAVEN_URL }}
+          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+
+  build_windows:
+    runs-on: windows-2025
+    if: ${{ inputs.project == 'fabric-loom-native' }}
     steps:
       - uses: actions/setup-java@v4
         with:

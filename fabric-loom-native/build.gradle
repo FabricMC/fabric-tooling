@@ -1,0 +1,38 @@
+plugins {
+	id "java-library"
+	id "fabric-java-21"
+	id "fabric-java-formatting"
+	id "fabric-java-publishing"
+	id "fabric-junit"
+	id "fabric-versioning"
+}
+
+version = "0.3.0"
+
+evaluationDependsOn(":native:windows:fabric-loom-native")
+
+def architectures = [
+	"X86",
+	"X86-64",
+	"Aarch64"
+]
+
+def collectDlls = tasks.register("collectDlls", Sync) {
+	architectures.forEach { arch ->
+		from(project(":native:windows:fabric-loom-native").tasks.named("linkRelease${arch}").get().linkedFile) {
+			into "fabric-loom-native/" + arch.toLowerCase()
+		}
+	}
+
+	rename { fileName ->
+		"fabric-loom-native.dll"
+	}
+
+	into layout.buildDirectory.dir("dlls")
+}
+
+sourceSets.main.resources.srcDir collectDlls
+
+tasks.withType(GenerateModuleMetadata) {
+	enabled = false
+}

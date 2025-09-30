@@ -3,3 +3,16 @@ rootProject.name = 'fabric-tooling'
 include "class-tweaker"
 include "fabric-log4j-util"
 include "dev-launch-injector"
+
+def buildNative = file(".nativeEnabled").exists() || System.getenv('CI') != null
+def isWindows = System.getProperty('os.name').toLowerCase().contains('windows')
+
+if (buildNative) {
+	include 'native:third-party:google-test'
+
+	if (isWindows) {
+		include "fabric-loom-native"
+
+		include 'native:windows:fabric-loom-native'
+	}
+}
