@@ -18,4 +18,4 @@ Forked from [TerminalConsoleAppender](https://github.com/Minecrell/TerminalConso
 3. Filter out everything other than src/ and move /src to the target sub dir - `git filter-repo --path src/ --path-rename src:dev-launch-injector/src`
 4. Change dir to fabric-tooling
 5. `git remote add migrate <file path to other repo>`
-6. `git pull migrate --allow-unrelated-histories main`
+6. `git pull migrate --allow-unrelated-histories main --no-rebase`
