@@ -7,7 +7,7 @@ jobs:
     strategy:
       matrix:
         platform: [ ubuntu-24.04 ]
-    runs-on: ${{ matrix.platfrom }}
+    runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/setup-java@v4
         with:
