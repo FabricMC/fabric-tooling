@@ -1,0 +1,16 @@
+plugins {
+	id "fabric-maven-publishing"
+}
+
+java {
+	withSourcesJar()
+	withJavadocJar()
+}
+
+publishing {
+	publications {
+		mavenJava(MavenPublication) {
+			from components.java
+		}
+	}
+}

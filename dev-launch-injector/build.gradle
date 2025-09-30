@@ -1,0 +1,9 @@
+plugins {
+    id "java-library"
+	id "fabric-java-8"
+    id "fabric-java-formatting"
+	id "fabric-java-publishing"
+	id "fabric-versioning"
+}
+
+version = "0.3.0"

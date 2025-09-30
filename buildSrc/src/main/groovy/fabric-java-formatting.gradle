@@ -1,0 +1,30 @@
+plugins {
+    id "checkstyle"
+    id "com.diffplug.spotless"
+}
+
+repositories {
+	mavenCentral()
+}
+
+checkstyle {
+    configFile = rootProject.file("checkstyle.xml")
+    toolVersion = "11.1.0"
+}
+
+def header = project.file("HEADER")
+
+spotless {
+    lineEndings = com.diffplug.spotless.LineEnding.UNIX
+
+    java {
+		if (header.exists()) {
+			licenseHeaderFile(header)
+		}
+
+        removeUnusedImports()
+        importOrder('java', 'javax', '', 'net.fabricmc')
+        leadingSpacesToTabs()
+        trimTrailingWhitespace()
+    }
+}

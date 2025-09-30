@@ -1,0 +1,30 @@
+name: Release
+on:
+  workflow_dispatch: # Manual trigger
+    inputs:
+      project:
+        description: 'The project to release'
+        required: true
+        type: choice
+        options:
+          - dev-launch-injector
+          - fabric-log4j-util
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'microsoft'
+          java-version: '25'
+      - uses: actions/checkout@v4
+      - run: ./gradlew ":$PROJECT:build" ":$PROJECT:publish" --stacktrace --warning-mode=fail
+        env:
+          PROJECT: ${{ inputs.project }}
+          MAVEN_URL: ${{ secrets.MAVEN_URL }}
+          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}

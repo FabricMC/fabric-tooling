@@ -1,0 +1,48 @@
+import groovy.xml.XmlSlurper
+
+plugins {
+	id 'maven-publish'
+}
+
+def ENV = System.getenv()
+
+group = 'net.fabricmc'
+
+publishing {
+	repositories {
+		if (ENV.MAVEN_URL) {
+			maven {
+				url ENV.MAVEN_URL
+				credentials {
+					username ENV.MAVEN_USERNAME
+					password ENV.MAVEN_PASSWORD
+				}
+			}
+		}
+	}
+}
+
+def url = "https://maven.fabricmc.net/${project.group.replace(".", "/")}/${base.archivesName.get()}/maven-metadata.xml"
+def thisVersion = project.version
+
+tasks.register('checkVersion') {
+	group = "publishing"
+	doFirst {
+		try {
+			def xml = URI.create(url).toURL().text
+			def metadata = new XmlSlurper().parseText(xml)
+			def versions = metadata.versioning.versions.version*.text();
+			if (versions.contains(thisVersion)) {
+				throw new RuntimeException("${thisVersion} has already been released!")
+			}
+		} catch (FileNotFoundException ignored) {
+			println("Version metadata not found, assuming this is the first release.")
+		}
+	}
+}
+
+if (ENV.MAVEN_URL) {
+	// Make sure we run this before publishing anything.
+	check.dependsOn tasks.named("checkVersion")
+}
+

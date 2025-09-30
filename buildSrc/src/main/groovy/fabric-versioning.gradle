@@ -1,0 +1,9 @@
+afterEvaluate {
+	def ENV = System.getenv()
+
+	if (version == "unspecified") {
+		throw new RuntimeException("Version not set")
+	}
+
+	version = version + (ENV.GITHUB_ACTIONS ? "" : "+local")
+}

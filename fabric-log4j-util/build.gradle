@@ -1,0 +1,14 @@
+plugins {
+    id "java-library"
+	id "fabric-java-8"
+    id "fabric-java-formatting"
+	id "fabric-java-publishing"
+	id "fabric-versioning"
+}
+
+version = "1.0.0"
+
+dependencies {
+	compileOnly 'org.apache.logging.log4j:log4j-core:2.25.2' // compileOnly as we don't want to be upgrading log4j for people.
+    compileOnly 'org.jetbrains:annotations:26.0.2'
+}
