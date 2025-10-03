@@ -11,6 +11,13 @@ Injects version dependent args and properties to avoid having to rewrite IDE run
 
 Forked from [TerminalConsoleAppender](https://github.com/Minecrell/TerminalConsoleAppender/) under the MIT license to provide LoggerNamePatternSelector as used in a mod development environment.
 
+### Building native code (Windows)
+
+1. Install Visual Studio 2022 Community
+2. Install ARM64 build tools
+3. Install clang-format with `winget install LLVM.ClangFormat`
+4. Create a `.nativeEnabled` file in the root of this repo
+
 #### Migrating existing git repos with commit history
 
 1. Install [git-filter-repo](https://github.com/newren/git-filter-repo) with `brew install git-filter-repo`

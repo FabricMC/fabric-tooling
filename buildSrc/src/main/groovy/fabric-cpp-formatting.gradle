@@ -1,0 +1,40 @@
+plugins {
+	id "com.diffplug.spotless"
+}
+
+def header = project.file("HEADER")
+def clangVersionProvider = providers.of(ClangFormatVersionValueSource.class) {}
+
+spotless {
+	lineEndings = com.diffplug.spotless.LineEnding.UNIX
+
+	cpp {
+		target 'src/main/cpp/**', 'src/main/headers/**', 'src/test/cpp/**'
+
+		if (header.exists()) {
+			licenseHeaderFile(header)
+		}
+
+		clangFormat(clangVersionProvider.get())
+	}
+}
+
+import org.gradle.api.provider.ValueSourceParameters;
+import javax.inject.Inject;
+
+abstract class ClangFormatVersionValueSource implements ValueSource<String, ValueSourceParameters.None> {
+	@Inject
+	protected abstract ExecOperations getExecOperations();
+
+	@Override
+	String obtain() {
+		var outputStream = new ByteArrayOutputStream();
+		ExecResult result = getExecOperations().exec(spec -> {
+			spec.commandLine("clang-format")
+			spec.args("--version")
+			spec.setStandardOutput(outputStream)
+		});
+		result.assertNormalExitValue()
+		return (outputStream.toString().trim() =~ /\d+\.\d+\.\d+/)[0]
+	}
+}
