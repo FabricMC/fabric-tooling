@@ -38,3 +38,8 @@ javadoc {
 		addStringOption("Xdoclint:none", "-quiet")
 	}
 }
+
+// Access wideners have tests involving records, they need to run on at least Java 16
+compileTestJava {
+	options.release = 16
+}

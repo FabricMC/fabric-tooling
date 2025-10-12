@@ -19,6 +19,7 @@ package net.fabricmc.classtweaker.classvisitor;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.Map;
 
@@ -78,6 +79,39 @@ class AccessWidenerClassVisitorTest extends ClassVisitorTest {
 			Class<?> innerClass = classes.get("test.FinalPrivateInnerClass$Inner");
 			assertThat(outerClass.getClasses()).containsOnly(innerClass);
 			assertThat(innerClass).isPublic().isNotFinal();
+		}
+
+		@Test
+		void testMakeRecordAccessible() throws Exception {
+			classTweaker.visitAccessWidener("test/PackagePrivateRecord").visitClass(AccessWidenerVisitor.AccessType.ACCESSIBLE, false);
+			Class<?> testClass = applyTransformer("test.PackagePrivateRecord");
+			assertThat(testClass).isPublic();
+
+			// Test if canonical constructor is also public now
+			Constructor<?> constructor = testClass.getConstructor(String.class, int.class);
+			assertEquals("public", Modifier.toString(constructor.getModifiers()));
+
+			// Test if non-canonical constructor is still private
+			Constructor<?> nonCanonicalConstructor = testClass.getDeclaredConstructor(int.class);
+			assertEquals("private", Modifier.toString(nonCanonicalConstructor.getModifiers()));
+		}
+
+		@Test
+		void testMakeInnerRecordAccessible() throws Exception {
+			classTweaker.visitAccessWidener("test/PrivateInnerRecord$Inner").visitClass(AccessWidenerVisitor.AccessType.ACCESSIBLE, false);
+			Map<String, Class<?>> classes = applyTransformer();
+			assertThat(classes).containsOnlyKeys("test.PrivateInnerRecord$Inner", "test.PrivateInnerRecord");
+
+			Class<?> innerClass = classes.get("test.PrivateInnerRecord$Inner");
+			assertThat(innerClass).isPublic();
+
+			// Test if canonical constructor is also public now
+			Constructor<?> constructor = innerClass.getConstructor(String.class, int.class);
+			assertEquals("public", Modifier.toString(constructor.getModifiers()));
+
+			// Test if non-canonical constructor is still private
+			Constructor<?> nonCanonicalConstructor = innerClass.getDeclaredConstructor(int.class);
+			assertEquals("private", Modifier.toString(nonCanonicalConstructor.getModifiers()));
 		}
 	}
 
