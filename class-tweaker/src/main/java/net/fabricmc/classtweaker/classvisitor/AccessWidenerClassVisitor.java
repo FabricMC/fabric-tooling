@@ -25,6 +25,7 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.RecordComponentVisitor;
+import org.objectweb.asm.tree.MethodNode;
 
 import net.fabricmc.classtweaker.api.AccessWidener;
 import net.fabricmc.classtweaker.api.ClassTweaker;
@@ -41,9 +42,9 @@ public final class AccessWidenerClassVisitor extends ClassVisitor {
 
 	private AccessWidener accessWidener = null;
 
-	private boolean isRecord;
-	private final List<String> recordComponentDescriptors = new ArrayList<>();
-	private String recordConstructorDescriptor;
+	private boolean shouldDeferRecordConstructors;
+	private final StringBuilder recordDescriptor = new StringBuilder("(");
+	private final List<MethodNode> recordConstructors = new ArrayList<>();
 
 	public AccessWidenerClassVisitor(int api, ClassVisitor classVisitor, ClassTweaker classTweaker) {
 		super(api, classVisitor);
@@ -55,7 +56,8 @@ public final class AccessWidenerClassVisitor extends ClassVisitor {
 		className = name;
 		classAccess = access;
 		accessWidener = classTweaker.getAccessWidener(name);
-		isRecord = (access & Opcodes.ACC_RECORD) != 0;
+
+		shouldDeferRecordConstructors = (access & Opcodes.ACC_RECORD) != 0;
 
 		super.visit(
 				version,
@@ -69,7 +71,7 @@ public final class AccessWidenerClassVisitor extends ClassVisitor {
 
 	@Override
 	public RecordComponentVisitor visitRecordComponent(String name, String descriptor, String signature) {
-		recordComponentDescriptors.add(descriptor);
+		recordDescriptor.append(descriptor);
 
 		return super.visitRecordComponent(name, descriptor, signature);
 	}
@@ -106,22 +108,14 @@ public final class AccessWidenerClassVisitor extends ClassVisitor {
 		);
 	}
 
-	private String getRecordConstructorDescriptor() {
-		if (recordConstructorDescriptor == null) {
-			recordConstructorDescriptor = "(" + String.join("", recordComponentDescriptors) + ")V";
-		}
-
-		return recordConstructorDescriptor;
-	}
-
-	private boolean isCanonicalRecordConstructor(String name, String descriptor) {
-		return isRecord && name.equals("<init>") && descriptor.equals(getRecordConstructorDescriptor());
-	}
-
 	@Override
 	public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
-		if (isCanonicalRecordConstructor(name, descriptor)) {
-			access = accessWidener.getCanonicalConstructorAccess().apply(access, name, classAccess);
+		if (shouldDeferRecordConstructors && name.equals("<init>")) {
+			// Defer record constructor, since we may not know the full record descriptor yet
+			MethodNode constructor = new MethodNode(access, name, descriptor, signature, exceptions);
+			recordConstructors.add(constructor);
+
+			return constructor;
 		}
 
 		return new AccessWidenerMethodVisitor(super.visitMethod(
@@ -131,6 +125,30 @@ public final class AccessWidenerClassVisitor extends ClassVisitor {
 				signature,
 				exceptions
 		));
+	}
+
+	@Override
+	public void visitEnd() {
+		if (!shouldDeferRecordConstructors) {
+			return;
+		}
+
+		// By setting this to false now, visitMethod will no longer defer the constructors, and we can
+		// re-use `visitMethod` via `MethodNode::accept(ClassVisitor)`
+		shouldDeferRecordConstructors = false;
+
+		String canonicalDesc = recordDescriptor.append(")V").toString();
+
+		for (MethodNode constructor : recordConstructors) {
+			// Widen canonical record constructor
+			if (constructor.desc.equals(canonicalDesc)) {
+				constructor.access = accessWidener.getCanonicalConstructorAccess().apply(constructor.access, constructor.name, classAccess);
+			}
+
+			constructor.accept(this);
+		}
+
+		super.visitEnd();
 	}
 
 	private class AccessWidenerMethodVisitor extends MethodVisitor {
