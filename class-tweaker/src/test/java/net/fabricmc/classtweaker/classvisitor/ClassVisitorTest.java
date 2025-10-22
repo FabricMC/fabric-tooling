@@ -27,14 +27,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.ClassNode;
 
 import net.fabricmc.classtweaker.impl.ClassTweakerImpl;
 
@@ -65,30 +63,18 @@ public abstract class ClassVisitorTest {
 				// Map /test/X.class -> X.class
 				.map(p -> p.getFileName().toString())
 				.filter(p -> p.endsWith(".class"))
-				.map(p -> "test." + p.substring(0, p.length() - ".class".length()))
+				.map(p -> "test/" + p.substring(0, p.length() - ".class".length()))
 				.filter(classTweaker.getTargets()::contains)
 				.collect(Collectors.toMap(
 						p -> p,
 						p -> {
 							try {
-								return Class.forName(p, false, classLoader);
+								return Class.forName(p.replace('/', '.'), false, classLoader);
 							} catch (ClassNotFoundException e) {
 								return fail(e);
 							}
 						}
 				));
-	}
-
-	public ClassNode readClass(String className) {
-		try (InputStream classData = getClass().getClassLoader().getResourceAsStream(className.replace('.', '/') + ".class")) {
-			ClassReader classReader = new ClassReader(Objects.requireNonNull(classData));
-			ClassNode classNode = new ClassNode();
-			classReader.accept(classNode, 0);
-
-			return classNode;
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
 	}
 
 	private class TransformingClassLoader extends ClassLoader {
@@ -100,7 +86,8 @@ public abstract class ClassVisitorTest {
 
 		@Override
 		protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-			byte[] generatedBytes = generatedClasses.remove(name.replace(".", "/"));
+			String internalName = name.replace(".", "/");
+			byte[] generatedBytes = generatedClasses.remove(internalName);
 
 			if (generatedBytes != null) {
 				writeClass(name, generatedBytes);
@@ -108,10 +95,10 @@ public abstract class ClassVisitorTest {
 			}
 
 			if (name.startsWith("test.")) {
-				InputStream classData = getParent().getResourceAsStream(name.replace('.', '/') + ".class");
+				InputStream classData = getParent().getResourceAsStream(internalName + ".class");
 
 				if (classData != null) {
-					if (classTweaker.getTargets().contains(name)) {
+					if (classTweaker.getTargets().contains(internalName)) {
 						try {
 							ClassReader classReader = new ClassReader(classData);
 							ClassWriter classWriter = new ClassWriter(0);

@@ -47,9 +47,9 @@ public class ClassTweakerTest {
 	void testParentClassesAreAddedAsTargetsForInnerClasses() {
 		widener.visitAccessWidener("a/b/C$IC1$IC2").visitClass(AccessWidenerVisitor.AccessType.ACCESSIBLE, false);
 		assertThat(widener.getTargets()).containsOnly(
-				"a.b.C",
-				"a.b.C$IC1",
-				"a.b.C$IC1$IC2"
+				"a/b/C",
+				"a/b/C$IC1",
+				"a/b/C$IC1$IC2"
 		);
 		assertThat(widener.getClasses())
 				.containsOnly("a/b/C$IC1$IC2");
@@ -65,7 +65,7 @@ public class ClassTweakerTest {
 	@Test
 	void testClassNameInterpretation() {
 		widener.visitAccessWidener("a/b/C").visitClass(AccessWidenerVisitor.AccessType.ACCESSIBLE, false);
-		assertThat(widener.getTargets()).containsOnly("a.b.C");
+		assertThat(widener.getTargets()).containsOnly("a/b/C");
 		assertThat(widener.getAccessWidener("a/b/C").getClassAccess())
 				.matches(AccessWidener.Access::isAccessible);
 	}

@@ -33,8 +33,8 @@ class ForwardingVisitorTest {
 	@Test
 	void visitHeader() {
 		visitor.visitHeader("special-namespace");
-		assertEquals("classTweaker\tv1\tspecial-namespace\n", writer1.writeString());
-		assertEquals(writer1.writeString(), writer2.writeString());
+		assertEquals("classTweaker\tv1\tspecial-namespace\n", writer1.getOutputAsString());
+		assertEquals(writer1.getOutputAsString(), writer2.getOutputAsString());
 	}
 
 	@Test
@@ -42,8 +42,8 @@ class ForwardingVisitorTest {
 		visitor.visitHeader("special-namespace");
 		visitor.visitAccessWidener("class-name").visitClass(AccessWidenerVisitor.AccessType.ACCESSIBLE, true);
 		assertEquals("classTweaker\tv1\tspecial-namespace\n"
-				+ "transitive-accessible\tclass\tclass-name\n", writer1.writeString());
-		assertEquals(writer1.writeString(), writer2.writeString());
+				+ "transitive-accessible\tclass\tclass-name\n", writer1.getOutputAsString());
+		assertEquals(writer1.getOutputAsString(), writer2.getOutputAsString());
 	}
 
 	@Test
@@ -51,8 +51,8 @@ class ForwardingVisitorTest {
 		visitor.visitHeader("special-namespace");
 		visitor.visitAccessWidener("class-name").visitMethod("method-name", "method-desc", AccessWidenerVisitor.AccessType.ACCESSIBLE, true);
 		assertEquals("classTweaker\tv1\tspecial-namespace\n"
-				+ "transitive-accessible\tmethod\tclass-name\tmethod-name\tmethod-desc\n", writer1.writeString());
-		assertEquals(writer1.writeString(), writer2.writeString());
+				+ "transitive-accessible\tmethod\tclass-name\tmethod-name\tmethod-desc\n", writer1.getOutputAsString());
+		assertEquals(writer1.getOutputAsString(), writer2.getOutputAsString());
 	}
 
 	@Test
@@ -60,8 +60,8 @@ class ForwardingVisitorTest {
 		visitor.visitHeader("special-namespace");
 		visitor.visitAccessWidener("class-name").visitField("field-name", "field-desc", AccessWidenerVisitor.AccessType.ACCESSIBLE, true);
 		assertEquals("classTweaker\tv1\tspecial-namespace\n"
-				+ "transitive-accessible\tfield\tclass-name\tfield-name\tfield-desc\n", writer1.writeString());
-		assertEquals(writer1.writeString(), writer2.writeString());
+				+ "transitive-accessible\tfield\tclass-name\tfield-name\tfield-desc\n", writer1.getOutputAsString());
+		assertEquals(writer1.getOutputAsString(), writer2.getOutputAsString());
 	}
 
 	@Test
@@ -69,7 +69,7 @@ class ForwardingVisitorTest {
 		visitor.visitHeader("special-namespace");
 		visitor.visitInjectedInterface("test/FinalClass", "test/InterfaceTests", false);
 		assertEquals("classTweaker\tv1\tspecial-namespace\n"
-								+ "inject-interface\ttest/FinalClass\ttest/InterfaceTests\n", writer1.writeString());
-		assertEquals(writer1.writeString(), writer2.writeString());
+								+ "inject-interface\ttest/FinalClass\ttest/InterfaceTests\n", writer1.getOutputAsString());
+		assertEquals(writer1.getOutputAsString(), writer2.getOutputAsString());
 	}
 }

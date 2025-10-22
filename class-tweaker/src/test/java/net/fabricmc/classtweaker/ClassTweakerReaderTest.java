@@ -200,7 +200,7 @@ public class ClassTweakerReaderTest {
 					.collect(Collectors.joining("\n"));
 			parseLines(lines);
 
-			assertThat(visitor.getTargets()).containsOnly("some.test.Class");
+			assertThat(visitor.getTargets()).containsOnly("some/test/Class");
 			assertThat(getClasses()).containsOnly(entry("some/test/Class", expectedAccess));
 			assertThat(getFields()).isEmpty();
 			assertThat(getMethods()).isEmpty();
@@ -284,7 +284,7 @@ public class ClassTweakerReaderTest {
 					.collect(Collectors.joining("\n"));
 			parseLines(lines);
 
-			assertThat(visitor.getTargets()).containsOnly("some.test.Class");
+			assertThat(visitor.getTargets()).containsOnly("some/test/Class");
 
 			if (expectedClassAccess != null) {
 				assertThat(getClasses()).containsOnly(
@@ -379,7 +379,7 @@ public class ClassTweakerReaderTest {
 					.collect(Collectors.joining("\n"));
 			parseLines(lines);
 
-			assertThat(visitor.getTargets()).containsOnly("some.test.Class");
+			assertThat(visitor.getTargets()).containsOnly("some/test/Class");
 
 			if (expectedClassAccess != null) {
 				assertThat(getClasses()).containsOnly(
