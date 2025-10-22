@@ -30,6 +30,8 @@ public interface AccessWidener {
 
 	Access getFieldAccess(EntryTriple entryTriple);
 
+	Access getCanonicalConstructorAccess();
+
 	Map<EntryTriple, Access> getAllMethodAccesses();
 
 	Map<EntryTriple, Access> getAllFieldAccesses();

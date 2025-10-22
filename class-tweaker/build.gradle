@@ -19,6 +19,7 @@ repositories {
 dependencies {
 	api "org.ow2.asm:asm:9.8"
 	api "org.ow2.asm:asm-commons:9.8" // For Remapper
+	api "org.ow2.asm:asm-tree:9.8" // For Remapper
 	api "net.fabricmc:tiny-remapper:0.11.2" // For validator
 
 	compileOnly "org.jetbrains:annotations:26.0.2"
@@ -37,4 +38,9 @@ javadoc {
 		// Disable the crazy super-strict doclint tool in Java 8
 		addStringOption("Xdoclint:none", "-quiet")
 	}
+}
+
+// Access wideners have tests involving records, they need to run on at least Java 16
+compileTestJava {
+	options.release = 16
 }

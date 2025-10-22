@@ -71,6 +71,15 @@ public final class AccessWidenerImpl implements AccessWidener, AccessWidenerVisi
 	}
 
 	@Override
+	public Access getCanonicalConstructorAccess() {
+		if (classAccess.isAccessible()) {
+			return MethodAccess.ACCESSIBLE;
+		} else {
+			return MethodAccess.DEFAULT;
+		}
+	}
+
+	@Override
 	public Map<EntryTriple, Access> getAllMethodAccesses() {
 		return (Map) methodAccess;
 	}
@@ -361,6 +370,11 @@ public final class AccessWidenerImpl implements AccessWidener, AccessWidenerVisi
 
 		@Override
 		public Access getFieldAccess(EntryTriple entryTriple) {
+			return MutableAccess.DEFAULT;
+		}
+
+		@Override
+		public Access getCanonicalConstructorAccess() {
 			return MutableAccess.DEFAULT;
 		}
 

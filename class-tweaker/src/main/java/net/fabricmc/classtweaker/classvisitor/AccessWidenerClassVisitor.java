@@ -16,11 +16,16 @@
 
 package net.fabricmc.classtweaker.classvisitor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.RecordComponentVisitor;
+import org.objectweb.asm.tree.MethodNode;
 
 import net.fabricmc.classtweaker.api.AccessWidener;
 import net.fabricmc.classtweaker.api.ClassTweaker;
@@ -37,6 +42,10 @@ public final class AccessWidenerClassVisitor extends ClassVisitor {
 
 	private AccessWidener accessWidener = null;
 
+	private boolean shouldDeferRecordMethods;
+	private final StringBuilder recordDescriptor = new StringBuilder("(");
+	private final List<MethodNode> recordMethods = new ArrayList<>();
+
 	public AccessWidenerClassVisitor(int api, ClassVisitor classVisitor, ClassTweaker classTweaker) {
 		super(api, classVisitor);
 		this.classTweaker = classTweaker;
@@ -48,6 +57,8 @@ public final class AccessWidenerClassVisitor extends ClassVisitor {
 		classAccess = access;
 		accessWidener = classTweaker.getAccessWidener(name);
 
+		shouldDeferRecordMethods = (access & Opcodes.ACC_RECORD) != 0;
+
 		super.visit(
 				version,
 				accessWidener.getClassAccess().apply(access, name, classAccess),
@@ -56,6 +67,13 @@ public final class AccessWidenerClassVisitor extends ClassVisitor {
 				superName,
 				interfaces
 		);
+	}
+
+	@Override
+	public RecordComponentVisitor visitRecordComponent(String name, String descriptor, String signature) {
+		recordDescriptor.append(descriptor);
+
+		return super.visitRecordComponent(name, descriptor, signature);
 	}
 
 	@Override
@@ -92,6 +110,16 @@ public final class AccessWidenerClassVisitor extends ClassVisitor {
 
 	@Override
 	public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+		if (shouldDeferRecordMethods) {
+			// Defer record method, since we may not know the full record descriptor yet
+			// and we cannot immediately widen the canonical constructor therefore.
+			// Note that we defer all methods so that method order remains the same.
+			MethodNode constructor = new MethodNode(access, name, descriptor, signature, exceptions);
+			recordMethods.add(constructor);
+
+			return constructor;
+		}
+
 		return new AccessWidenerMethodVisitor(super.visitMethod(
 				accessWidener.getMethodAccess(new EntryTriple(className, name, descriptor)).apply(access, name, classAccess),
 				name,
@@ -99,6 +127,30 @@ public final class AccessWidenerClassVisitor extends ClassVisitor {
 				signature,
 				exceptions
 		));
+	}
+
+	@Override
+	public void visitEnd() {
+		if (!shouldDeferRecordMethods) {
+			return;
+		}
+
+		// By setting this to false now, visitMethod will no longer defer the constructors, and we can
+		// re-use `visitMethod` via `MethodNode::accept(ClassVisitor)`
+		shouldDeferRecordMethods = false;
+
+		String canonicalDesc = recordDescriptor.append(")V").toString();
+
+		for (MethodNode constructor : recordMethods) {
+			// Widen canonical record constructor
+			if (constructor.desc.equals(canonicalDesc)) {
+				constructor.access = accessWidener.getCanonicalConstructorAccess().apply(constructor.access, constructor.name, classAccess);
+			}
+
+			constructor.accept(this);
+		}
+
+		super.visitEnd();
 	}
 
 	private class AccessWidenerMethodVisitor extends MethodVisitor {
