@@ -42,9 +42,9 @@ public final class AccessWidenerClassVisitor extends ClassVisitor {
 
 	private AccessWidener accessWidener = null;
 
-	private boolean shouldDeferRecordConstructors;
+	private boolean shouldDeferRecordMethods;
 	private final StringBuilder recordDescriptor = new StringBuilder("(");
-	private final List<MethodNode> recordConstructors = new ArrayList<>();
+	private final List<MethodNode> recordMethods = new ArrayList<>();
 
 	public AccessWidenerClassVisitor(int api, ClassVisitor classVisitor, ClassTweaker classTweaker) {
 		super(api, classVisitor);
@@ -57,7 +57,7 @@ public final class AccessWidenerClassVisitor extends ClassVisitor {
 		classAccess = access;
 		accessWidener = classTweaker.getAccessWidener(name);
 
-		shouldDeferRecordConstructors = (access & Opcodes.ACC_RECORD) != 0;
+		shouldDeferRecordMethods = (access & Opcodes.ACC_RECORD) != 0;
 
 		super.visit(
 				version,
@@ -110,10 +110,12 @@ public final class AccessWidenerClassVisitor extends ClassVisitor {
 
 	@Override
 	public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
-		if (shouldDeferRecordConstructors && name.equals("<init>")) {
-			// Defer record constructor, since we may not know the full record descriptor yet
+		if (shouldDeferRecordMethods) {
+			// Defer record method, since we may not know the full record descriptor yet
+			// and we cannot immediately widen the canonical constructor therefore.
+			// Note that we defer all methods so that method order remains the same.
 			MethodNode constructor = new MethodNode(access, name, descriptor, signature, exceptions);
-			recordConstructors.add(constructor);
+			recordMethods.add(constructor);
 
 			return constructor;
 		}
@@ -129,17 +131,17 @@ public final class AccessWidenerClassVisitor extends ClassVisitor {
 
 	@Override
 	public void visitEnd() {
-		if (!shouldDeferRecordConstructors) {
+		if (!shouldDeferRecordMethods) {
 			return;
 		}
 
 		// By setting this to false now, visitMethod will no longer defer the constructors, and we can
 		// re-use `visitMethod` via `MethodNode::accept(ClassVisitor)`
-		shouldDeferRecordConstructors = false;
+		shouldDeferRecordMethods = false;
 
 		String canonicalDesc = recordDescriptor.append(")V").toString();
 
-		for (MethodNode constructor : recordConstructors) {
+		for (MethodNode constructor : recordMethods) {
 			// Widen canonical record constructor
 			if (constructor.desc.equals(canonicalDesc)) {
 				constructor.access = accessWidener.getCanonicalConstructorAccess().apply(constructor.access, constructor.name, classAccess);
