@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 import org.objectweb.asm.ClassVisitor;
 
 import net.fabricmc.classtweaker.api.AccessWidener;
@@ -81,7 +82,6 @@ public final class ClassTweakerImpl implements ClassTweaker, ClassTweakerVisitor
 
 	private void addTargets(String clazz) {
 		classes.add(clazz);
-		clazz = clazz.replace('/', '.');
 		targetClasses.add(clazz);
 
 		//Also transform all parent classes
@@ -109,7 +109,7 @@ public final class ClassTweakerImpl implements ClassTweaker, ClassTweakerVisitor
 		return Collections.unmodifiableSet(targetClasses);
 	}
 
-	@Override
+	@VisibleForTesting
 	public Set<String> getClasses() {
 		return Collections.unmodifiableSet(classes);
 	}

@@ -37,7 +37,7 @@ import net.fabricmc.classtweaker.api.visitor.ClassTweakerVisitor;
 class ClassTweakerWriterTest {
 	@Test
 	void testCantWriteWithoutNamespace() {
-		IllegalStateException e = assertThrows(IllegalStateException.class, ClassTweakerWriter.create(ClassTweaker.CT_V1)::writeString);
+		IllegalStateException e = assertThrows(IllegalStateException.class, ClassTweakerWriter.create(ClassTweaker.CT_V1)::getOutputAsString);
 		assertThat(e).hasMessageContaining("No namespace set");
 	}
 
@@ -48,7 +48,7 @@ class ClassTweakerWriterTest {
 		ClassTweakerWriter writer = ClassTweakerWriter.create(ClassTweaker.AW_V1);
 		accept(writer, 1);
 
-		assertEquals(expectedContent, writer.writeString());
+		assertEquals(expectedContent, writer.getOutputAsString());
 	}
 
 	@Test
@@ -58,7 +58,7 @@ class ClassTweakerWriterTest {
 		ClassTweakerWriter writer = ClassTweakerWriter.create(ClassTweaker.AW_V2);
 		accept(writer, 2);
 
-		assertEquals(expectedContent, writer.writeString());
+		assertEquals(expectedContent, writer.getOutputAsString());
 	}
 
 	@Test
@@ -68,7 +68,7 @@ class ClassTweakerWriterTest {
 		ClassTweakerWriter writer = ClassTweakerWriter.create(ClassTweaker.CT_V1);
 		accept(writer, 3);
 
-		assertEquals(expectedContent, writer.writeString());
+		assertEquals(expectedContent, writer.getOutputAsString());
 	}
 
 	@Test
@@ -80,7 +80,7 @@ class ClassTweakerWriterTest {
 		writer.visitAccessWidener("SomeClass").visitClass(AccessWidenerVisitor.AccessType.EXTENDABLE, false);
 		assertEquals("accessWidener\tv2\tns1\n"
 				+ "accessible\tclass\tSomeClass\n"
-				+ "extendable\tclass\tSomeClass\n", writer.writeString());
+				+ "extendable\tclass\tSomeClass\n", writer.getOutputAsString());
 	}
 
 	@Test

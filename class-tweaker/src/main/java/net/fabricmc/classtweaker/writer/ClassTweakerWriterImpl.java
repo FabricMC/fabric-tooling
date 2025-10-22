@@ -19,6 +19,7 @@ package net.fabricmc.classtweaker.writer;
 import net.fabricmc.classtweaker.api.ClassTweakerWriter;
 import net.fabricmc.classtweaker.api.visitor.AccessWidenerVisitor;
 import net.fabricmc.classtweaker.api.visitor.ClassTweakerVisitor;
+import net.fabricmc.classtweaker.reader.ClassTweakerReaderImpl;
 
 public final class ClassTweakerWriterImpl implements ClassTweakerVisitor, ClassTweakerWriter {
 	private final StringBuilder builder = new StringBuilder();
@@ -97,7 +98,12 @@ public final class ClassTweakerWriterImpl implements ClassTweakerVisitor, ClassT
 	}
 
 	@Override
-	public String writeString() {
+	public byte[] getOutput() {
+		return getOutputAsString().getBytes(ClassTweakerReaderImpl.ENCODING);
+	}
+
+	@Override
+	public String getOutputAsString() {
 		if (namespace == null) {
 			throw new IllegalStateException("No namespace set. visitHeader wasn't called.");
 		}

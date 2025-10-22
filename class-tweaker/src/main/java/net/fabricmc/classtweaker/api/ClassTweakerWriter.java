@@ -27,5 +27,7 @@ public interface ClassTweakerWriter extends ClassTweakerVisitor {
 		return new ClassTweakerWriterImpl(version);
 	}
 
-	String writeString();
+	byte[] getOutput();
+
+	String getOutputAsString();
 }

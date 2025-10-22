@@ -68,7 +68,7 @@ class ClassTweakerRemapperTest {
 	void testRemapping() throws Exception {
 		ClassTweakerWriter writer = ClassTweakerWriter.create(ClassTweaker.CT_V1);
 		accept(ClassTweakerVisitor.remap(writer, remapper, "original_namespace", "different_namespace"));
-		assertEquals(readReferenceContent("Remapped.txt"), writer.writeString());
+		assertEquals(readReferenceContent("Remapped.txt"), writer.getOutputAsString());
 	}
 
 	void accept(ClassTweakerVisitor visitor) {

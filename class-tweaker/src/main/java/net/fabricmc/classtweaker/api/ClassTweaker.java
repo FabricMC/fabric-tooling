@@ -35,6 +35,7 @@ public interface ClassTweaker extends ClassTweakerVisitor {
 	int AW_V2 = 2;
 	// Class tweaker format versions.
 	int CT_V1 = 3;
+	int CT_LATEST = CT_V1;
 
 	/**
 	 * @return a new {@link ClassTweaker} instance.
@@ -53,15 +54,9 @@ public interface ClassTweaker extends ClassTweakerVisitor {
 	 * Contains a list of all classes that should be transformed.
 	 * This may contain classes (usually parent classes) that do have a direct class tweak to be applied to them.
 	 *
-	 * <p>Names are period-separated binary names (i.e. a.b.C).
+	 * <p>Names are forward-slash separated internal names (i.e. a/b/C$I).
 	 */
 	Set<String> getTargets();
-
-	/**
-	 * Contains a list of all the classes that have class tweakers.
-	 * Names are forward slash separated. (i.e a/b/C$I);
-	 */
-	Set<String> getClasses();
 
 	AccessWidener getAccessWidener(String className);
 

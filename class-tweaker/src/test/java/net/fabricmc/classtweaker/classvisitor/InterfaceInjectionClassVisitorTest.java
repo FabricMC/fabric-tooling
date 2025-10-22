@@ -32,7 +32,7 @@ public class InterfaceInjectionClassVisitorTest extends ClassVisitorTest {
 	@Test
 	void testSimple() throws Exception {
 		classTweaker.visitInjectedInterface("test/FinalClass", "test/InterfaceTests", false);
-		Class<?> testClass = applyTransformer("test.FinalClass");
+		Class<?> testClass = applyTransformer("test/FinalClass");
 		assertThat(testClass.getInterfaces()).singleElement()
 				.satisfies(itf -> assertThat(itf.getName()).isEqualTo("test.InterfaceTests"));
 	}
@@ -40,7 +40,7 @@ public class InterfaceInjectionClassVisitorTest extends ClassVisitorTest {
 	@Test
 	void testSimpleInner() throws Exception {
 		classTweaker.visitInjectedInterface("test/PrivateInnerClass$Inner", "test/InterfaceTests", false);
-		Class<?> testClass = applyTransformer().get("test.PrivateInnerClass$Inner");
+		Class<?> testClass = applyTransformer().get("test/PrivateInnerClass$Inner");
 		assertThat(testClass.getInterfaces()).singleElement()
 				.satisfies(itf -> assertThat(itf.getName()).isEqualTo("test.InterfaceTests"));
 	}
@@ -48,7 +48,7 @@ public class InterfaceInjectionClassVisitorTest extends ClassVisitorTest {
 	@Test
 	void testGenericInterface() throws Exception {
 		classTweaker.visitInjectedInterface("test/FinalClass", "test/GenericInterface<Ljava/lang/String;>", false);
-		Class<?> testClass = applyTransformer("test.FinalClass");
+		Class<?> testClass = applyTransformer("test/FinalClass");
 		assertGenericType(assertThat(testClass.getGenericInterfaces()).singleElement(), "test.GenericInterface")
 				.singleElement()
 				.isEqualTo(String.class);
@@ -57,7 +57,7 @@ public class InterfaceInjectionClassVisitorTest extends ClassVisitorTest {
 	@Test
 	void testPassingGenericInterface() throws Exception {
 		classTweaker.visitInjectedInterface("test/GenericClass", "test/GenericInterface<TT;>", false);
-		Class<?> testClass = applyTransformer("test.GenericClass");
+		Class<?> testClass = applyTransformer("test/GenericClass");
 		assertGenericType(assertThat(testClass.getGenericInterfaces()).singleElement(), "test.GenericInterface")
 				.singleElement()
 				.isInstanceOf(TypeVariable.class)
@@ -67,7 +67,7 @@ public class InterfaceInjectionClassVisitorTest extends ClassVisitorTest {
 	@Test
 	void testAdvancedGenericInterface() throws Exception {
 		classTweaker.visitInjectedInterface("test/GenericClass", "test/AdvancedGenericInterface<Ljava/util/function/Predicate<TT;>;Ljava/lang/Integer;>", false);
-		Class<?> testClass = applyTransformer("test.GenericClass");
+		Class<?> testClass = applyTransformer("test/GenericClass");
 		assertGenericType(assertThat(testClass.getGenericInterfaces()).singleElement(), "test.AdvancedGenericInterface")
 				.satisfiesExactly(
 						firstParam -> assertGenericType(assertThat(firstParam), "java.util.function.Predicate")
@@ -82,7 +82,7 @@ public class InterfaceInjectionClassVisitorTest extends ClassVisitorTest {
 	void testTwoInjectedInterfaces() throws Exception {
 		classTweaker.visitInjectedInterface("test/GenericClass", "test/GenericInterface<TT;>", false);
 		classTweaker.visitInjectedInterface("test/GenericClass", "test/GenericInterface2<Ljava/lang/Integer;>", false);
-		Class<?> testClass = applyTransformer("test.GenericClass");
+		Class<?> testClass = applyTransformer("test/GenericClass");
 		assertThat(testClass.getGenericInterfaces()).satisfiesExactly(
 				firstInterface -> assertGenericType(assertThat(firstInterface), "test.GenericInterface")
 						.singleElement()
@@ -97,7 +97,7 @@ public class InterfaceInjectionClassVisitorTest extends ClassVisitorTest {
 	@Test
 	void testInterfaceReferencesUnknownTypeVariable() {
 		classTweaker.visitInjectedInterface("test/FinalClass", "test/GenericInterface<TT;>", false);
-		assertThatThrownBy(() -> applyTransformer("test.GenericInterface"))
+		assertThatThrownBy(() -> applyTransformer("test/GenericInterface"))
 				.isInstanceOf(IllegalStateException.class)
 				.hasMessage("Interface test/GenericInterface attempted to use a type variable named T which is not present in the test/FinalClass class");
 	}
