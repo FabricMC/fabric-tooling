@@ -84,7 +84,7 @@ class AccessWidenerClassVisitorTest extends ClassVisitorTest {
 		@Test
 		void testMakeRecordAccessible() throws Exception {
 			classTweaker.visitAccessWidener("test/PackagePrivateRecord").visitClass(AccessWidenerVisitor.AccessType.ACCESSIBLE, false);
-			Class<?> testClass = applyTransformer("test.PackagePrivateRecord");
+			Class<?> testClass = applyTransformer("test/PackagePrivateRecord");
 			assertThat(testClass).isPublic();
 
 			// Test if canonical constructor is also public now
@@ -100,9 +100,9 @@ class AccessWidenerClassVisitorTest extends ClassVisitorTest {
 		void testMakeInnerRecordAccessible() throws Exception {
 			classTweaker.visitAccessWidener("test/PrivateInnerRecord$Inner").visitClass(AccessWidenerVisitor.AccessType.ACCESSIBLE, false);
 			Map<String, Class<?>> classes = applyTransformer();
-			assertThat(classes).containsOnlyKeys("test.PrivateInnerRecord$Inner", "test.PrivateInnerRecord");
+			assertThat(classes).containsOnlyKeys("test/PrivateInnerRecord$Inner", "test/PrivateInnerRecord");
 
-			Class<?> innerClass = classes.get("test.PrivateInnerRecord$Inner");
+			Class<?> innerClass = classes.get("test/PrivateInnerRecord$Inner");
 			assertThat(innerClass).isPublic();
 
 			// Test if canonical constructor is also public now
