@@ -132,6 +132,7 @@ public final class AccessWidenerClassVisitor extends ClassVisitor {
 	@Override
 	public void visitEnd() {
 		if (!shouldDeferRecordMethods) {
+			super.visitEnd();
 			return;
 		}
 
