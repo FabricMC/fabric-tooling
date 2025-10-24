@@ -93,7 +93,7 @@ public final class AccessWidenerClassVisitor extends ClassVisitor {
 				name,
 				outerName,
 				innerName,
-				accessWidener.getClassAccess().apply(access, name, classAccess)
+				classTweaker.getAccessWidener(name).getClassAccess().apply(access, name, classAccess)
 		);
 	}
 
