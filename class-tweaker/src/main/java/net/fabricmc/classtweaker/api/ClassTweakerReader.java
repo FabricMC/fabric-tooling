@@ -30,13 +30,13 @@ public interface ClassTweakerReader {
 		return new ClassTweakerReaderImpl(visitor);
 	}
 
-	void read(byte[] content, String id);
+	void read(byte[] content);
 
-	void read(byte[] content, String currentNamespace, String id);
+	void read(byte[] content, String currentNamespace);
 
-	void read(BufferedReader reader, String id) throws IOException;
+	void read(BufferedReader reader) throws IOException;
 
-	void read(BufferedReader reader, String currentNamespace, String id) throws IOException;
+	void read(BufferedReader reader, String currentNamespace) throws IOException;
 
 	static int readVersion(byte[] content) {
 		return ClassTweakerReaderImpl.readVersion(content);
