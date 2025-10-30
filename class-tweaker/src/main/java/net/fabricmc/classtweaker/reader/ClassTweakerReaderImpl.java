@@ -61,28 +61,28 @@ public final class ClassTweakerReaderImpl implements ClassTweakerReader {
 	}
 
 	@Override
-	public void read(byte[] content, String id) {
-		read(content, null, id);
+	public void read(byte[] content) {
+		read(content, null);
 	}
 
 	@Override
-	public void read(byte[] content, String currentNamespace, String id) {
+	public void read(byte[] content, String currentNamespace) {
 		String strContent = new String(content, ENCODING);
 
 		try {
-			read(new BufferedReader(new StringReader(strContent)), currentNamespace, id);
+			read(new BufferedReader(new StringReader(strContent)), currentNamespace);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
 
 	@Override
-	public void read(BufferedReader reader, String id) throws IOException {
-		read(reader, null, id);
+	public void read(BufferedReader reader) throws IOException {
+		read(reader, null);
 	}
 
 	@Override
-	public void read(BufferedReader reader, String currentNamespace, String id) throws IOException {
+	public void read(BufferedReader reader, String currentNamespace) throws IOException {
 		HeaderImpl header = readHeader(reader);
 		lineNumber = 1;
 		visitor.visitLineNumber(1);

@@ -120,7 +120,7 @@ public class ClassTweakerReaderTest {
 		public void throwsOnUnsupportedNamespaceIfNamespaceSet() {
 			ClassTweakerFormatException e = assertThrows(
 					ClassTweakerFormatException.class,
-					() -> reader.read(new BufferedReader(new StringReader("accessWidener v1 junk\nxxx")), "expectedNamespace", "test")
+					() -> reader.read(new BufferedReader(new StringReader("accessWidener v1 junk\nxxx")), "expectedNamespace")
 			);
 			assertThat(e).hasMessageContaining("Namespace (junk) does not match current runtime namespace (expectedNamespace)");
 		}
@@ -401,7 +401,7 @@ public class ClassTweakerReaderTest {
 		@Test
 		public void testCorrectLineNumbersInPresenceOfComments() {
 			int lineNumber = assertThrows(ClassTweakerFormatException.class,
-											() -> reader.read(new BufferedReader(new StringReader("accessWidener v1 namespace\n\n# comment\n\nERROR")), "test")
+											() -> reader.read(new BufferedReader(new StringReader("accessWidener v1 namespace\n\n# comment\n\nERROR")))
 			).getLineNumber();
 			assertEquals(5, lineNumber);
 		}
@@ -586,7 +586,7 @@ public class ClassTweakerReaderTest {
 	}
 
 	private void parse(String content) throws IOException {
-		reader.read(new BufferedReader(new StringReader(content)), "test");
+		reader.read(new BufferedReader(new StringReader(content)));
 	}
 
 	private void parseLines(String line) throws IOException {
