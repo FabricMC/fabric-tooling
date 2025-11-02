@@ -55,7 +55,7 @@ public class Main {
 		metaHost = metaUrl.getHost();
 		metaPort = metaUrl.getPort();
 
-		HttpServer server = HttpServer.create(new InetSocketAddress((InetAddress) null, 13694), 0);
+		HttpServer server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 13694), 0);
 		server.createContext("/net/fabricmc/intermediary/", Main::handleIntermediary);
 		server.start();
 
