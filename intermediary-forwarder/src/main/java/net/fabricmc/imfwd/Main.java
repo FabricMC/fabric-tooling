@@ -1,6 +1,7 @@
 package net.fabricmc.imfwd;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -63,41 +64,50 @@ public class Main {
 	}
 
 	private static void handleIntermediary(HttpExchange exchange) throws IOException {
-		String method = exchange.getRequestMethod();
-		Matcher matcher;
-		String newVersion;
-		int result;
+		//System.out.println("new request: "+exchange.getRequestURI());
 
-		if (!method.equals("GET")
-				&& !method.equals("HEAD")) { // bad request method
-			exchange.getResponseHeaders().add("Allow", "HEAD, GET");
-			result = 405;
-		} else if (!(matcher = REQUEST_PATTERN.matcher(exchange.getRequestURI().getRawPath())).matches()
-				|| "".equals(newVersion = getNewIntermediary(matcher.group(1)))) { // would-be 404 requests
-			result = 404;
-		} else if (newVersion == null) { // replacement fetch error
-			result = 500;
-		} else { // replacement success
-			String newLocation = String.format("/net/fabricmc/intermediary/%s/intermediary-%<s.%s", newVersion, matcher.group(2));
-			//System.out.println("match: "+matcher.group(1)+" -> "+newLocation);
-			exchange.getResponseHeaders().add("Location", newLocation);
-			result = 302;
-		}
+		try (exchange) {
+			// consume extraneous request data
+			exchange.getRequestBody().transferTo(OutputStream.nullOutputStream());
 
-		byte[] response = switch (result) {
-		case 302 -> RESPONSE_302;
-		case 404 -> RESPONSE_404;
-		case 405 -> RESPONSE_405;
-		case 500 -> RESPONSE_500;
-		default -> throw new IllegalStateException();
-		};
+			String method = exchange.getRequestMethod();
+			Matcher matcher;
+			String newVersion;
+			int result;
 
-		if (method.equals("HEAD")) {
-			exchange.getResponseHeaders().set("Content-Length", Integer.toString(response.length));
-			exchange.sendResponseHeaders(result, -1);
-		} else {
-			exchange.sendResponseHeaders(result, response.length);
-			exchange.getResponseBody().write(response);
+			if (!method.equals("GET")
+					&& !method.equals("HEAD")) { // bad request method
+				exchange.getResponseHeaders().add("Allow", "HEAD, GET");
+				result = 405;
+			} else if (!(matcher = REQUEST_PATTERN.matcher(exchange.getRequestURI().getRawPath())).matches()
+					|| "".equals(newVersion = getNewIntermediary(matcher.group(1)))) { // would-be 404 requests
+				result = 404;
+			} else if (newVersion == null) { // replacement fetch error
+				result = 500;
+			} else { // replacement success
+				String newLocation = String.format("/net/fabricmc/intermediary/%s/intermediary-%<s.%s", newVersion, matcher.group(2));
+				//System.out.println("match: "+matcher.group(1)+" -> "+newLocation);
+				exchange.getResponseHeaders().add("Location", newLocation);
+				result = 302;
+			}
+
+			byte[] response = switch (result) {
+			case 302 -> RESPONSE_302;
+			case 404 -> RESPONSE_404;
+			case 405 -> RESPONSE_405;
+			case 500 -> RESPONSE_500;
+			default -> throw new IllegalStateException();
+			};
+
+			if (method.equals("HEAD")) {
+				exchange.getResponseHeaders().set("Content-Length", Integer.toString(response.length));
+				exchange.sendResponseHeaders(result, -1);
+			} else {
+				exchange.sendResponseHeaders(result, response.length);
+				exchange.getResponseBody().write(response);
+			}
+
+			//System.out.println("sent response: "+result);
 		}
 	}
 
@@ -112,10 +122,13 @@ public class Main {
 		if (ret != null) return ret;
 
 		try {
-			HttpRequest request = HttpRequest.newBuilder(new URI(metaScheme, null, metaHost, metaPort, "/v2/versions/intermediary/"+version, null, null))
+			URI uri = new URI(metaScheme, null, metaHost, metaPort, "/v2/versions/intermediary/"+version, null, null);
+			//System.out.println("querying meta: "+uri);
+			HttpRequest request = HttpRequest.newBuilder(uri)
 					.timeout(Duration.ofSeconds(5))
 					.build();
 			HttpResponse<String> response = HTTP_CLIENT.send(request, BodyHandlers.ofString());
+			//System.out.println("response "+response.statusCode()+": "+response.body());
 			if (response.statusCode() != 200) return null;
 
 			Matcher matcher;
