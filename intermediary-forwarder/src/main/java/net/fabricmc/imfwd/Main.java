@@ -38,7 +38,7 @@ public class Main {
 
 	@SuppressWarnings("serial")
 	private static final Map<String, String> CACHE = Collections.synchronizedMap(new LinkedHashMap<>(500) {
-		protected boolean removeEldestEntry(Map.Entry<String,String> eldest) {
+		protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
 			return size() >= 500;
 		}
 	});

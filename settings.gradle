@@ -3,6 +3,7 @@ rootProject.name = 'fabric-tooling'
 include "class-tweaker"
 include "fabric-log4j-util"
 include "dev-launch-injector"
+include "intermediary-forwarder"
 
 def buildNative = file(".nativeEnabled").exists() || System.getenv('CI') != null
 def isWindows = System.getProperty('os.name').toLowerCase().contains('windows')
