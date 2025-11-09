@@ -11,6 +11,7 @@ on:
           - dev-launch-injector
           - fabric-log4j-util
           - fabric-loom-native
+          - intermediary-forwarder
 
 permissions:
   contents: write

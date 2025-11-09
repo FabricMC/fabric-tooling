@@ -1,0 +1,21 @@
+plugins {
+	id "application"
+	id "fabric-java-21"
+	id "fabric-java-formatting"
+	id "fabric-java-publishing"
+	id "fabric-versioning"
+}
+
+version = "0.1.0"
+
+application {
+	mainClass = 'net.fabricmc.imfwd.Main'
+}
+
+jar {
+	manifest {
+		attributes(
+			'Main-Class': application.mainClass
+		)
+	}
+}
