@@ -6,6 +6,7 @@ import io.javalin.Javalin;
 import io.javalin.openapi.plugin.OpenApiPlugin;
 import io.javalin.openapi.plugin.redoc.ReDocPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import net.fabricmc.javadoc.api.v1.AuthApi;
 
@@ -39,5 +40,10 @@ public class ApiServer {
 
 	public void run() {
 		app.start(8080);
+	}
+
+	@VisibleForTesting
+	public Javalin getApp() {
+		return app;
 	}
 }

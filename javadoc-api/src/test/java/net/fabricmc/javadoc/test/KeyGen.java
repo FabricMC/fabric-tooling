@@ -1,4 +1,4 @@
-package net.fabricmc.javadoc;
+package net.fabricmc.javadoc.test;
 
 import java.io.IOException;
 import java.nio.file.Files;
