@@ -14,9 +14,15 @@ import java.util.Base64;
 
 import com.auth0.jwt.interfaces.ECDSAKeyProvider;
 
+import net.fabricmc.javadoc.Config;
+
 public class KeyPair implements ECDSAKeyProvider {
 	private final ECPublicKey publicKey;
 	private final ECPrivateKey privateKey;
+
+	public KeyPair(Config.Jwt config) throws IOException {
+		this(Path.of(config.publicKey()), Path.of(config.publicKey()));
+	}
 
 	public KeyPair(Path publicKey, Path privateKey) throws IOException {
 		try {

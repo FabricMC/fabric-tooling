@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth Refresh</title>
+</head>
+<body>
+    <button id="githubBtn">Login with GitHub</button>
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('githubBtn').addEventListener('click', async () => {
+            const response = await fetch('/v1/auth/github');
+            const data = await response.json();
+            window.location.href = data.url;
+        });
+
+        function parseJWT(token) {
+            const parts = token.split('.');
+            const header = JSON.parse(atob(parts[0]));
+            const payload = JSON.parse(atob(parts[1]));
+            return { header, payload };
+        }
+
+        (async () => {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = 'Refreshing token...';
+
+            try {
+                const response = await fetch('/v1/auth/refresh', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.status == 401) {
+                     resultDiv.textContent = `Not logged-in`;
+                    return;
+                }
+
+                const data = await response.json();
+                const decoded = parseJWT(data.accessToken);
+                resultDiv.innerHTML = `<h3>Access Token:</h3><pre>${data.accessToken}</pre><h3>Payload:</h3><pre>${JSON.stringify(decoded.payload, null, 2)}</pre>`;
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        })();
+    </script>
+</body>
+</html>
+

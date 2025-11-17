@@ -1,6 +1,8 @@
 package net.fabricmc.javadoc.test;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyPair;
@@ -9,6 +11,7 @@ import java.security.spec.ECGenParameterSpec;
 import java.util.Base64;
 
 import com.auth0.jwt.algorithms.Algorithm;
+import com.google.gson.Gson;
 import io.javalin.Javalin;
 import io.javalin.http.HttpStatus;
 import io.javalin.testtools.DefaultTestConfig;
@@ -27,6 +30,8 @@ import net.fabricmc.javadoc.auth.impl.AccessTokenControllerImpl;
 import net.fabricmc.javadoc.auth.impl.RefreshTokenControllerImpl;
 
 public abstract class AbstractApiTest {
+	private static final Gson GSON = new Gson();
+
 	@TempDir
 	private static Path tempDir;
 
@@ -41,10 +46,8 @@ public abstract class AbstractApiTest {
 
 	@BeforeAll
 	static void setUpClass() throws Exception {
-		generateJWTKeyPair();
-
-		config = new Config(new Config.Jwt("https://localhost", tempDir.resolve("private_key.pem"), tempDir.resolve("public_key.pem")));
-		jwtAlgorithm = Algorithm.ECDSA384(new net.fabricmc.javadoc.util.KeyPair(config.jwt().publicKey(), config.jwt().privateKey()));
+		config = GSON.fromJson(readResource("config.json"), Config.class);
+		jwtAlgorithm = Algorithm.ECDSA384(generateJWTKeyPair());
 
 		refreshTokenController = new RefreshTokenControllerImpl(jwtAlgorithm, config);
 		accessTokenController = new AccessTokenControllerImpl(jwtAlgorithm, config);
@@ -52,7 +55,7 @@ public abstract class AbstractApiTest {
 
 	@BeforeEach
 	void setUp() {
-		AuthApi authApi = new AuthApi(accessTokenController, refreshTokenController);
+		AuthApi authApi = new AuthApi(config, accessTokenController, refreshTokenController, null);
 		server = new ApiServer(authApi);
 
 		app = server.getApp();
@@ -70,25 +73,35 @@ public abstract class AbstractApiTest {
 		Assertions.assertEquals(status.getCode(), response.code(), "Expected HTTP status " + status + " but got " + HttpStatus.forStatus(response.code()));
 	}
 
-	private static void generateJWTKeyPair() throws Exception {
+	private static net.fabricmc.javadoc.util.KeyPair generateJWTKeyPair() throws Exception {
 		KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
 		kpg.initialize(new ECGenParameterSpec("secp384r1"));
 		KeyPair keyPair = kpg.generateKeyPair();
 
 		byte[] privateDer = keyPair.getPrivate().getEncoded();
-		writePemFile(tempDir.resolve("private_key.pem"), "PRIVATE KEY", privateDer);
+		Path privateKey = writePemFile(tempDir.resolve("private_key.pem"), "PRIVATE KEY", privateDer);
 
 		byte[] publicDer = keyPair.getPublic().getEncoded();
-		writePemFile(tempDir.resolve("public_key.pem"), "PUBLIC KEY", publicDer);
+		Path publicKey = writePemFile(tempDir.resolve("public_key.pem"), "PUBLIC KEY", publicDer);
+
+		return new net.fabricmc.javadoc.util.KeyPair(publicKey, privateKey);
 	}
 
-	private static void writePemFile(Path file, String type, byte[] derBytes) throws IOException {
+	private static Path writePemFile(Path file, String type, byte[] derBytes) throws IOException {
 		String base64 = Base64.getMimeEncoder(64, "\n".getBytes()).encodeToString(derBytes);
 
 		String pem = "-----BEGIN " + type + "-----\n"
 				+ base64
 				+ "\n-----END " + type + "-----\n";
 
-		Files.write(file, pem.getBytes());
+		return Files.write(file, pem.getBytes());
+	}
+
+	private static String readResource(String name) {
+		try (InputStream is = AbstractApiTest.class.getClassLoader().getResourceAsStream(name)) {
+			return new String(is.readAllBytes());
+		} catch (IOException e) {
+			throw new UncheckedIOException(e);
+		}
 	}
 }
