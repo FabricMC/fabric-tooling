@@ -3,6 +3,10 @@ package net.fabricmc.javadoc.api;
 import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.path;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+
 import io.javalin.Javalin;
 import io.javalin.http.ContentType;
 import io.javalin.http.Context;
@@ -11,17 +15,25 @@ import io.javalin.openapi.plugin.redoc.ReDocPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
 import org.jetbrains.annotations.VisibleForTesting;
 
+import net.fabricmc.javadoc.Config;
 import net.fabricmc.javadoc.api.v1.AuthApi;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
-
+import net.fabricmc.javadoc.api.v1.RoleAuthenticationHandler;
+import net.fabricmc.javadoc.auth.impl.AccessTokenControllerImpl;
+import net.fabricmc.javadoc.auth.impl.RefreshTokenControllerImpl;
+import net.fabricmc.javadoc.auth.oauth.GithubOAuthProvider;
+import net.fabricmc.javadoc.thirdparty.GithubAPIImpl;
 
 public class ApiServer {
 	private final Javalin app;
 
-	public ApiServer(AuthApi authApi) {
+	public ApiServer(Config appConfig) {
+		var refreshTokenController = new RefreshTokenControllerImpl(appConfig);
+		var accessTokenController = new AccessTokenControllerImpl(appConfig);
+		var githubAPI = new GithubAPIImpl();
+		var githubOAuthProvider = new GithubOAuthProvider(appConfig, githubAPI);
+		var roleAuthenticationHandler = new RoleAuthenticationHandler(refreshTokenController);
+		var authApi = new AuthApi(appConfig, accessTokenController, refreshTokenController, githubOAuthProvider);
+
 		this.app = Javalin.create(config -> {
 			config.showJavalinBanner = false;
 
@@ -36,7 +48,7 @@ public class ApiServer {
 			config.registerPlugin(new ReDocPlugin());
 
 			config.router.mount(routing -> {
-				routing.beforeMatched("/v1/*", authApi::handleAccess);
+				routing.beforeMatched("/v1/*", roleAuthenticationHandler);
 			}).apiBuilder(() -> {
 				path("/v1", () -> {
 					path("/auth", authApi.endpoints());

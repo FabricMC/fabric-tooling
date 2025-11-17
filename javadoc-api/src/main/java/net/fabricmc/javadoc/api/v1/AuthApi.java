@@ -4,33 +4,29 @@ import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.post;
 
 import java.time.Duration;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import io.javalin.apibuilder.EndpointGroup;
-import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
 import io.javalin.http.Cookie;
-import io.javalin.http.InternalServerErrorResponse;
 import io.javalin.http.SameSite;
-import io.javalin.http.UnauthorizedResponse;
 import io.javalin.http.util.NaiveRateLimit;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiResponse;
-import io.javalin.security.RouteRole;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import net.fabricmc.javadoc.Config;
+import net.fabricmc.javadoc.api.util.Attributes;
+import net.fabricmc.javadoc.api.util.Role;
 import net.fabricmc.javadoc.auth.AccessTokenController;
 import net.fabricmc.javadoc.auth.AuthPlatform;
 import net.fabricmc.javadoc.auth.RefreshToken;
 import net.fabricmc.javadoc.auth.RefreshTokenController;
 import net.fabricmc.javadoc.auth.oauth.GithubOAuthProvider;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public record AuthApi(
 		Config config,
@@ -38,42 +34,6 @@ public record AuthApi(
 		RefreshTokenController refreshTokenController,
 		GithubOAuthProvider githubOAuthProvider) {
 	private static final Logger LOGGER = LoggerFactory.getLogger(AuthApi.class);
-
-	public void handleAccess(Context context) {
-		Set<RouteRole> routeRoles = context.routeRoles();
-
-		if (routeRoles.isEmpty()) {
-			// Require that all routes specify the required roles
-			throw new InternalServerErrorResponse("Missing route roles for " + context.req().getRequestURI());
-		} else if (routeRoles.size() != 1) {
-			// Each route should only have one role
-			throw new InternalServerErrorResponse("Multiple route roles for " + context.req().getRequestURI() + ": " + routeRoles);
-		}
-
-		Role role = (Role) routeRoles.iterator().next();
-
-		switch (role) {
-			case OPEN -> {
-				return; // Anyone can access
-			}
-			case REFRESH_TOKEN -> {
-				String jwt = context.cookie("refreshToken");
-
-				if (jwt == null) {
-					throw new UnauthorizedResponse("Missing refresh token cookie");
-				}
-
-				RefreshToken refreshToken = refreshTokenController.parseAndValidateRefreshToken(jwt);
-				Attributes.REFRESH_TOKEN.set(context, refreshToken);
-				return;
-			}
-			case AUTH_TOKEN -> {
-				break;
-			}
-		}
-
-		throw new UnauthorizedResponse();
-	}
 
 	public EndpointGroup endpoints() {
 		return () -> {

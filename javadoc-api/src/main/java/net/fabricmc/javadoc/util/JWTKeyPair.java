@@ -12,25 +12,24 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
+import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.ECDSAKeyProvider;
 
-import net.fabricmc.javadoc.Config;
-
-public class KeyPair implements ECDSAKeyProvider {
+public class JWTKeyPair implements ECDSAKeyProvider {
 	private final ECPublicKey publicKey;
 	private final ECPrivateKey privateKey;
 
-	public KeyPair(Config.Jwt config) throws IOException {
-		this(Path.of(config.publicKey()), Path.of(config.publicKey()));
-	}
-
-	public KeyPair(Path publicKey, Path privateKey) throws IOException {
+	public JWTKeyPair(Path publicKey, Path privateKey) {
 		try {
 			this.publicKey = loadECPublicKey(publicKey);
 			this.privateKey = loadPrivateKey(privateKey);
 		} catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
-			throw new IOException("Failed to load key pair", e);
+			throw new RuntimeException("Failed to load JWT key pair", e);
 		}
+	}
+
+	public Algorithm jwtAlgorithm() {
+		return Algorithm.ECDSA384(this);
 	}
 
 	@Override

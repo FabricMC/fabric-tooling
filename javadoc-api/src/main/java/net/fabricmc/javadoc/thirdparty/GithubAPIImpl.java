@@ -1,13 +1,13 @@
 package net.fabricmc.javadoc.thirdparty;
 
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+
+import com.google.gson.Gson;
+import com.google.gson.annotations.SerializedName;
 
 public class GithubAPIImpl implements GithubAPI {
 	private static final Gson GSON = new Gson();

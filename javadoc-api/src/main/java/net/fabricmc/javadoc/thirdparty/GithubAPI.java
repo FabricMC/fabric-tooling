@@ -19,4 +19,3 @@ public interface GithubAPI {
 		String login
 	) {}
 }
-

@@ -2,8 +2,8 @@
   "apiUrl": "http://localhost:8080",
   "jwt": {
     "issuer": "localhost",
-    "privateKey": "",
-    "publicKey": ""
+    "privateKey": "%private_key%",
+    "publicKey": "%public_key%"
   },
   "githubOAuth": {
     "clientID": "123",

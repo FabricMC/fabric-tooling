@@ -7,7 +7,6 @@ import java.util.UUID;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
-import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
@@ -19,7 +18,7 @@ import net.fabricmc.javadoc.auth.AuthPlatform;
 import net.fabricmc.javadoc.auth.RefreshToken;
 import net.fabricmc.javadoc.auth.RefreshTokenController;
 
-public record RefreshTokenControllerImpl(Algorithm algorithm, Config config) implements RefreshTokenController {
+public record RefreshTokenControllerImpl(Config config) implements RefreshTokenController {
 	private static final Duration REFRESH_TOKEN_DURATION = Duration.ofDays(7);
 
 	@Override
@@ -31,13 +30,13 @@ public record RefreshTokenControllerImpl(Algorithm algorithm, Config config) imp
 				.withJWTId(UUID.randomUUID().toString())
 				.withClaim("plt", platform.name().toLowerCase(Locale.ROOT))
 				.withClaim("type", "refresh")
-				.sign(algorithm);
+				.sign(config().jwt().algorithm());
 	}
 
 	@Override
-	public RefreshToken parseAndValidateRefreshToken(String jwt) throws JWTDecodeException, JWTVerificationException {
+	public RefreshToken parseAndValidateRefreshToken(String jwt) {
 		try {
-			JWTVerifier verifier = JWT.require(algorithm)
+			JWTVerifier verifier = JWT.require(config().jwt().algorithm())
 					.withIssuer(config().jwt().issuer())
 					.withClaim("type", "refresh")
 					.withClaimPresence("plt")

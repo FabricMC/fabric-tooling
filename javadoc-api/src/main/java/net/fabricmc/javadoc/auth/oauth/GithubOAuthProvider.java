@@ -3,7 +3,6 @@ package net.fabricmc.javadoc.auth.oauth;
 import java.io.IOException;
 import java.util.List;
 
-import com.auth0.jwt.algorithms.Algorithm;
 import io.javalin.http.InternalServerErrorResponse;
 import io.javalin.http.UnauthorizedResponse;
 import org.slf4j.Logger;
@@ -19,8 +18,8 @@ public class GithubOAuthProvider extends OAuthProvider {
 	private final GithubAPI githubAPI;
 	private final Config.GithubOAuth githubOAuth;
 
-	public GithubOAuthProvider(Config config, Algorithm algorithm, GithubAPI githubAPI) {
-		super(config, config.githubOAuth(), algorithm);
+	public GithubOAuthProvider(Config config, GithubAPI githubAPI) {
+		super(config, config.githubOAuth());
 		this.githubAPI = githubAPI;
 		this.githubOAuth = config.githubOAuth();
 	}

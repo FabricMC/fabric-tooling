@@ -1,4 +1,4 @@
-package net.fabricmc.javadoc.api.v1;
+package net.fabricmc.javadoc.api.util;
 
 import io.javalin.security.RouteRole;
 

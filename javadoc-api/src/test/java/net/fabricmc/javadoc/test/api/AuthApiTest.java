@@ -10,12 +10,13 @@ import okhttp3.Response;
 import org.junit.jupiter.api.Test;
 
 import net.fabricmc.javadoc.auth.AuthPlatform;
+import net.fabricmc.javadoc.auth.impl.RefreshTokenControllerImpl;
 import net.fabricmc.javadoc.test.AbstractApiTest;
 
 public class AuthApiTest extends AbstractApiTest {
 	@Test
 	void refreshAccessTokenSuccess() {
-		String jwt = refreshTokenController.newRefreshToken(AuthPlatform.DISCORD, "Test User");
+		String jwt = new RefreshTokenControllerImpl(config).newRefreshToken(AuthPlatform.DISCORD, "Test User");
 
 		Response response = client.post("/v1/auth/refresh", null, builder -> {
 			builder.addHeader("Cookie", "refreshToken=" + jwt);
@@ -43,7 +44,7 @@ public class AuthApiTest extends AbstractApiTest {
 				.withJWTId(UUID.randomUUID().toString())
 				.withClaim("plt", "discord")
 				.withClaim("type", "refresh")
-				.sign(jwtAlgorithm);
+				.sign(config.jwt().algorithm());
 
 		Response response = client.post("/v1/auth/refresh", null, builder -> {
 			builder.addHeader("Cookie", "refreshToken=" + jwt);

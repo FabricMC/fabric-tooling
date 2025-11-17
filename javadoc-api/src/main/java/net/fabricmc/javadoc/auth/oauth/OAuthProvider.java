@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.UnauthorizedResponse;
@@ -21,14 +20,12 @@ public abstract class OAuthProvider {
 
 	private final Config config;
 	private final Config.OAuth oAuthConfig;
-	private final Algorithm algorithm;
 
 	private final String platform;
 
-	protected OAuthProvider(Config config, Config.OAuth oAuthConfig, Algorithm algorithm) {
+	protected OAuthProvider(Config config, Config.OAuth oAuthConfig) {
 		this.config = config;
 		this.oAuthConfig = oAuthConfig;
-		this.algorithm = algorithm;
 
 		this.platform = getAuthPlatform().name().toLowerCase(Locale.ROOT);
 	}
@@ -80,8 +77,7 @@ public abstract class OAuthProvider {
 
 		try {
 			// Verify that the request provided a valid state parameter.
-			// TODO maybe invalidate the state after use to prevent replay?
-			JWT.require(algorithm)
+			JWT.require(config.jwt().algorithm())
 				.withIssuer(config.jwt().issuer())
 				.withClaim("plt", platform)
 				.build();
@@ -111,6 +107,6 @@ public abstract class OAuthProvider {
 				.withExpiresAt(Instant.now().plus(STATE_DURATION))
 				.withJWTId(UUID.randomUUID().toString())
 				.withClaim("plt", platform)
-				.sign(algorithm);
+				.sign(config.jwt().algorithm());
 	}
 }
