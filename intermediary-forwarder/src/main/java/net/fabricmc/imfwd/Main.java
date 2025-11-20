@@ -49,7 +49,6 @@ public class Main {
 			return size() >= 500;
 		}
 	});
-	private static final CacheEntry ABSENT_CACHE_ENTRY = new CacheEntry(null, null);
 
 	private static final Map<String, Instant> RELEASE_TIMES = new HashMap<>();
 	private static long lastReleaseTimeUpdate;
@@ -99,7 +98,7 @@ public class Main {
 				exchange.getResponseHeaders().add("Allow", "HEAD, GET");
 				result = 405;
 			} else if (!(matcher = REQUEST_PATTERN.matcher(exchange.getRequestURI().getRawPath())).matches()
-					|| (entry = getNewIntermediary(matcher.group(1))) == ABSENT_CACHE_ENTRY) { // would-be 404 requests
+					|| (entry = getNewIntermediary(matcher.group(1))) != null && entry.isAbsent()) { // would-be 404 requests
 				result = 404;
 			} else if (entry == null) { // replacement fetch error
 				result = 500;
@@ -139,7 +138,20 @@ public class Main {
 	 */
 	private static CacheEntry getNewIntermediary(String version) {
 		CacheEntry ret = CACHE.get(version);
-		if (ret != null) return ret;
+
+		if (ret != null && !ret.isExpired()) {
+			return ret;
+		}
+
+		return computeNewIntermediary(version);
+	}
+
+	private static synchronized CacheEntry computeNewIntermediary(String version) {
+		CacheEntry ret = CACHE.get(version);
+
+		if (ret != null && !ret.isExpired()) { // repeated due to synchronization/concurrency
+			return ret;
+		}
 
 		try {
 			URI uri = new URI(metaScheme, null, metaHost, metaPort, "/v2/versions/intermediary/"+version, null, null);
@@ -154,18 +166,19 @@ public class Main {
 			String newVersion;
 
 			if (response.body().startsWith("[]")) {
-				ret = ABSENT_CACHE_ENTRY;
+				ret = CacheEntry.ofAbsent();
 			} else if ((newVersion = parseVersion(response.body())) == null) { // empty or invalid result
 				return null;
 			} else if (newVersion.equals(version)) { // identical result, keep original 404 (meta knows version, maven doesn't have it)
-				ret = ABSENT_CACHE_ENTRY;
+				ret = CacheEntry.ofAbsent();
 			} else {
 				Instant releaseTime = getReleaseTime(version);
 				if (releaseTime == null) return null;
 
-				ret = new CacheEntry(newVersion, DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH).withZone(ZoneId.of("GMT")).format(releaseTime));
+				ret = CacheEntry.of(newVersion, releaseTime);
 			}
 
+			assert !ret.isExpired();
 			CACHE.put(version, ret);
 
 			return ret;
@@ -175,7 +188,23 @@ public class Main {
 		}
 	}
 
-	private record CacheEntry(String newVersion, String lastModified) { }
+	private record CacheEntry(String newVersion, String lastModified, long time) {
+		static CacheEntry of(String newVersion, Instant releaseTime) {
+			return new CacheEntry(newVersion, DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH).withZone(ZoneId.of("GMT")).format(releaseTime), System.nanoTime());
+		}
+
+		static CacheEntry ofAbsent() {
+			return new CacheEntry(null, null, System.nanoTime());
+		}
+
+		boolean isAbsent() {
+			return newVersion == null;
+		}
+
+		boolean isExpired() {
+			return isAbsent() && System.nanoTime() - time > 60_000_000_000L; // negative (absent) entries expire after 60s
+		}
+	}
 
 	private static String parseVersion(String metaVersionJson) {
 		try (JsonReader reader = new JsonReader(new StringReader(metaVersionJson))) {
@@ -209,7 +238,7 @@ public class Main {
 		long time = System.nanoTime();
 
 		if (lastReleaseTimeUpdate != 0
-				&& time - lastReleaseTimeUpdate >= 30_000_000_000L) { // only allow one request every 30s
+				&& time - lastReleaseTimeUpdate < 30_000_000_000L) { // only allow one request every 30s
 			return null;
 		}
 
