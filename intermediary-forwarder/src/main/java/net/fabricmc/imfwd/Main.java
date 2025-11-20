@@ -178,7 +178,6 @@ public class Main {
 				ret = CacheEntry.of(newVersion, releaseTime);
 			}
 
-			assert !ret.isExpired();
 			CACHE.put(version, ret);
 
 			return ret;
