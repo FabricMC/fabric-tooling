@@ -10,13 +10,14 @@ import okhttp3.Response;
 import org.junit.jupiter.api.Test;
 
 import net.fabricmc.javadoc.auth.AuthPlatform;
+import net.fabricmc.javadoc.auth.RefreshToken;
 import net.fabricmc.javadoc.auth.impl.RefreshTokenControllerImpl;
 import net.fabricmc.javadoc.test.AbstractApiTest;
 
 public class AuthApiTest extends AbstractApiTest {
 	@Test
 	void refreshAccessTokenSuccess() {
-		String jwt = new RefreshTokenControllerImpl(config).newRefreshToken(AuthPlatform.DISCORD, "Test User");
+		String jwt = new RefreshTokenControllerImpl(config).newRefreshToken(AuthPlatform.DISCORD, new RefreshToken.User(1, "Test User"));
 
 		Response response = client.post("/v1/auth/refresh", null, builder -> {
 			builder.addHeader("Cookie", "refreshToken=" + jwt);

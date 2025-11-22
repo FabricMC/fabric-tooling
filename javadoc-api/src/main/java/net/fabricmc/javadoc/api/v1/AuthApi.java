@@ -95,14 +95,14 @@ public record AuthApi(
 		String code = context.queryParam("code");
 		String state = context.queryParam("state");
 
-		String displayName = githubOAuthProvider().verifyLogin(code, state);
-		redirectWithRefreshToken(context, AuthPlatform.GITHUB, displayName);
+		RefreshToken.User user = githubOAuthProvider().verifyLogin(code, state);
+		redirectWithRefreshToken(context, AuthPlatform.GITHUB, user);
 	}
 
-	private void redirectWithRefreshToken(Context context, AuthPlatform authPlatform, String displayName) {
-		LOGGER.info("Creating refresh token for {} user {}", authPlatform, displayName);
+	private void redirectWithRefreshToken(Context context, AuthPlatform authPlatform, RefreshToken.User user) {
+		LOGGER.info("Creating refresh token for {} user {}", authPlatform, user);
 
-		String refreshToken = refreshTokenController().newRefreshToken(authPlatform, displayName);
+		String refreshToken = refreshTokenController().newRefreshToken(authPlatform, user);
 		Cookie refreshTokenCookie = new Cookie(
 				"refreshToken",
 				refreshToken,

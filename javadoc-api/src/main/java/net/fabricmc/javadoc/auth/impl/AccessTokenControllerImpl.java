@@ -22,7 +22,7 @@ public record AccessTokenControllerImpl(Config config) implements AccessTokenCon
 		return JWT.create()
 				.withIssuer(config.jwt().issuer())
 				.withExpiresAt(Instant.now().plus(ACCESS_TOKEN_DURATION))
-				.withSubject(refreshToken.displayName())
+				.withSubject(refreshToken.user().displayName())
 				.withClaim("type", "access")
 				.withClaim("role", permissionGroup.name().toLowerCase(Locale.ROOT))
 				.sign(config().jwt().algorithm());

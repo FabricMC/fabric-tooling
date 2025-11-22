@@ -14,6 +14,7 @@ import io.javalin.http.UnauthorizedResponse;
 
 import net.fabricmc.javadoc.Config;
 import net.fabricmc.javadoc.auth.AuthPlatform;
+import net.fabricmc.javadoc.auth.RefreshToken;
 
 public abstract class OAuthProvider {
 	private static final Duration STATE_DURATION = Duration.ofMinutes(10);
@@ -48,7 +49,7 @@ public abstract class OAuthProvider {
 	 * @param code The authorization code.
 	 * @return The display name of the user.
 	 */
-	protected abstract String verifyUser(String code);
+	protected abstract RefreshToken.User verifyUser(String code);
 
 	/**
 	 * Start the OAuth authorisation process by constructing the authorisation URL.
@@ -70,7 +71,7 @@ public abstract class OAuthProvider {
 	 * @param state The state parameter, should match the JWT generated earlier.
 	 * @return The display name of the user.
 	 */
-	public final String verifyLogin(String code, String state) {
+	public final RefreshToken.User verifyLogin(String code, String state) {
 		if (code == null || state == null) {
 			throw new BadRequestResponse("Missing code and/or state");
 		}

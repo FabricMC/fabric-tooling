@@ -5,10 +5,10 @@ public interface RefreshTokenController {
 	 * Generates a new refresh token for the given platform and display name.
 	 *
 	 * @param platform The authentication platform.
-	 * @param displayName The display name of the user.
+	 * @param user The user details
 	 * @return A JWT of the refresh token.
 	 */
-	String newRefreshToken(AuthPlatform platform, String displayName);
+	String newRefreshToken(AuthPlatform platform, RefreshToken.User user);
 
 	/**
 	 * Parses and validates the given refresh token JWT.

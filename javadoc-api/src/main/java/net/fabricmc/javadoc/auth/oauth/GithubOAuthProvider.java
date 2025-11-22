@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import net.fabricmc.javadoc.Config;
 import net.fabricmc.javadoc.auth.AuthPlatform;
+import net.fabricmc.javadoc.auth.RefreshToken;
 import net.fabricmc.javadoc.thirdparty.GithubAPI;
 
 // TODO support PKCE
@@ -43,7 +44,7 @@ public class GithubOAuthProvider extends OAuthProvider {
 	}
 
 	@Override
-	protected String verifyUser(String code) {
+	protected RefreshToken.User verifyUser(String code) {
 		String accessToken;
 
 		try {
@@ -68,6 +69,6 @@ public class GithubOAuthProvider extends OAuthProvider {
 		}
 
 		LOGGER.info("Verified GitHub user: {} (ID: {})", githubUser.login(), githubUser.id());
-		return githubUser.name();
+		return new RefreshToken.User(githubUser.id(), githubUser.login());
 	}
 }

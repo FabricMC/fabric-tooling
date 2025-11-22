@@ -2,10 +2,10 @@ package net.fabricmc.javadoc.auth.impl;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Locale;
 import java.util.UUID;
 
 import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTCreator;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
@@ -22,14 +22,16 @@ public record RefreshTokenControllerImpl(Config config) implements RefreshTokenC
 	private static final Duration REFRESH_TOKEN_DURATION = Duration.ofDays(7);
 
 	@Override
-	public String newRefreshToken(AuthPlatform platform, String displayName) {
-		return JWT.create()
+	public String newRefreshToken(AuthPlatform platform, RefreshToken.User user) {
+		RefreshToken refreshToken = new RefreshToken(UUID.randomUUID(), platform, user);
+
+		JWTCreator.Builder builder = JWT.create()
 				.withIssuer(config().jwt().issuer())
-				.withExpiresAt(Instant.now().plus(REFRESH_TOKEN_DURATION))
-				.withSubject(displayName)
-				.withJWTId(UUID.randomUUID().toString())
-				.withClaim("plt", platform.name().toLowerCase(Locale.ROOT))
-				.withClaim("type", "refresh")
+				.withExpiresAt(Instant.now().plus(REFRESH_TOKEN_DURATION));
+
+		refreshToken.applyToJWT(builder);
+
+		return builder
 				.sign(config().jwt().algorithm());
 	}
 
@@ -43,14 +45,7 @@ public record RefreshTokenControllerImpl(Config config) implements RefreshTokenC
 					.build();
 
 			DecodedJWT decoded = verifier.verify(jwt);
-
-			RefreshToken token = new RefreshToken(
-					UUID.fromString(decoded.getId()),
-					AuthPlatform.getByName(decoded.getClaim("plt").asString()),
-					decoded.getSubject()
-			);
-
-			return token;
+			return RefreshToken.fromJwt(decoded);
 		} catch (JWTDecodeException e) {
 			throw new BadRequestResponse("Malformed refresh JWT token");
 		} catch (JWTVerificationException e) {
