@@ -22,7 +22,7 @@ public record RefreshTokenControllerImpl(Config config) implements RefreshTokenC
 	private static final Duration REFRESH_TOKEN_DURATION = Duration.ofDays(7);
 
 	@Override
-	public String newRefreshToken(AuthPlatform platform, String displayName){
+	public String newRefreshToken(AuthPlatform platform, String displayName) {
 		return JWT.create()
 				.withIssuer(config().jwt().issuer())
 				.withExpiresAt(Instant.now().plus(REFRESH_TOKEN_DURATION))

@@ -30,23 +30,23 @@ public record RoleAuthenticationHandler(RefreshTokenController refreshTokenContr
 		Role role = (Role) routeRoles.iterator().next();
 
 		switch (role) {
-			case OPEN -> {
-				return; // Anyone can access
-			}
-			case REFRESH_TOKEN -> {
-				String jwt = ctx.cookie("refreshToken");
+		case OPEN -> {
+			return; // Anyone can access
+		}
+		case REFRESH_TOKEN -> {
+			String jwt = ctx.cookie("refreshToken");
 
-				if (jwt == null) {
-					throw new UnauthorizedResponse("Missing refresh token cookie");
-				}
+			if (jwt == null) {
+				throw new UnauthorizedResponse("Missing refresh token cookie");
+			}
 
-				RefreshToken refreshToken = refreshTokenController.parseAndValidateRefreshToken(jwt);
-				Attributes.REFRESH_TOKEN.set(ctx, refreshToken);
-				return;
-			}
-			case AUTH_TOKEN -> {
-				break;
-			}
+			RefreshToken refreshToken = refreshTokenController.parseAndValidateRefreshToken(jwt);
+			Attributes.REFRESH_TOKEN.set(ctx, refreshToken);
+			return;
+		}
+		case AUTH_TOKEN -> {
+			break;
+		}
 		}
 
 		throw new UnauthorizedResponse();

@@ -14,8 +14,8 @@ public interface GithubAPI {
 	GithubUser getUser(String token) throws IOException;
 
 	record GithubUser(
-		long id,
-		String name,
-		String login
-	) {}
+			long id,
+			String name,
+			String login
+	) { }
 }

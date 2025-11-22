@@ -89,7 +89,7 @@ public abstract class AbstractApiTest {
 		return new KeyPairPath(publicKey, privateKey);
 	}
 
-	private record KeyPairPath(Path publicKey, Path privateKey) {}
+	private record KeyPairPath(Path publicKey, Path privateKey) { }
 
 	private static String readResource(String name) {
 		try (InputStream is = AbstractApiTest.class.getClassLoader().getResourceAsStream(name)) {

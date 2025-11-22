@@ -58,7 +58,7 @@ public record AuthApi(
 		context.json(new DiscordResponse("https://example.com"));
 	}
 
-	private record DiscordResponse(String url) {}
+	private record DiscordResponse(String url) { }
 
 	@OpenApi(
 			path = "/v1/auth/github",
@@ -76,7 +76,7 @@ public record AuthApi(
 		context.json(new GitHubResponse(authorisationURL));
 	}
 
-	private record GitHubResponse(String url) {}
+	private record GitHubResponse(String url) { }
 
 	@OpenApi(
 			path = "/v1/auth/github/landing",
@@ -104,29 +104,29 @@ public record AuthApi(
 
 		String refreshToken = refreshTokenController().newRefreshToken(authPlatform, displayName);
 		Cookie refreshTokenCookie = new Cookie(
-			"refreshToken",
-			refreshToken,
-			"/v1/auth/refresh",
-			(int) Duration.ofDays(7).toSeconds(),
-			true, // Secure
-			0,
-			true, // HTTP only
-			null,
-			null,
-			SameSite.STRICT
+				"refreshToken",
+				refreshToken,
+				"/v1/auth/refresh",
+				(int) Duration.ofDays(7).toSeconds(),
+				true, // Secure
+				0,
+				true, // HTTP only
+				null,
+				null,
+				SameSite.STRICT
 		);
 		context.cookie(refreshTokenCookie);
 		context.redirect(config().apiUrl());
 	}
 
 	@OpenApi(
-		path = "/v1/auth/refresh",
-		methods = HttpMethod.POST,
-		summary = "Refresh the access token",
-		cookies = {@OpenApiParam(name = "refreshToken", description = "The refresh token cookie", required = true)},
-		tags = "Auth",
-		operationId = "refreshAccessToken",
-		responses = @OpenApiResponse(status = "200", content = @OpenApiContent(from = RefreshResponse.class))
+			path = "/v1/auth/refresh",
+			methods = HttpMethod.POST,
+			summary = "Refresh the access token",
+			cookies = {@OpenApiParam(name = "refreshToken", description = "The refresh token cookie", required = true)},
+			tags = "Auth",
+			operationId = "refreshAccessToken",
+			responses = @OpenApiResponse(status = "200", content = @OpenApiContent(from = RefreshResponse.class))
 	)
 	private void refresh(Context context) {
 		NaiveRateLimit.requestPerTimeUnit(context, 5, TimeUnit.MINUTES);
@@ -136,5 +136,5 @@ public record AuthApi(
 		context.json(new RefreshResponse(accessToken));
 	}
 
-	private record RefreshResponse(String accessToken) {}
+	private record RefreshResponse(String accessToken) { }
 }

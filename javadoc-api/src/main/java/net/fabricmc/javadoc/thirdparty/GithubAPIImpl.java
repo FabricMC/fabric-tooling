@@ -64,11 +64,11 @@ public class GithubAPIImpl implements GithubAPI {
 			@SerializedName("client_secret") String clientSecret,
 			@SerializedName("code") String code,
 			@SerializedName("redirect_uri") String redirectUri
-	) {}
+	) { }
 
 	private record AccessTokenResponse(
 			@SerializedName("access_token") String accessToken,
 			@SerializedName("token_type") String tokenType,
 			@SerializedName("scope") String scope
-	) {}
+	) { }
 }

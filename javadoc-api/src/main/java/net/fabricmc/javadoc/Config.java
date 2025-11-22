@@ -9,6 +9,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 
 import net.fabricmc.javadoc.util.JWTKeyPair;
@@ -30,11 +31,10 @@ public record Config(
 			String issuer,
 			Algorithm algorithm
 	) {
-
 		public static class JwtDeserializer implements JsonDeserializer<Jwt> {
 			@Override
 			public Jwt deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
-				var jsonObject = json.getAsJsonObject();
+				JsonObject jsonObject = json.getAsJsonObject();
 				String issuer = jsonObject.get("issuer").getAsString();
 				String publicKey = jsonObject.get("publicKey").getAsString();
 				String privateKey = jsonObject.get("privateKey").getAsString();
@@ -51,5 +51,5 @@ public record Config(
 	public record GithubOAuth(
 			String clientID,
 			String clientSecret
-	) implements OAuth {}
+	) implements OAuth { }
 }

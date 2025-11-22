@@ -52,6 +52,7 @@ public class JWTKeyPair implements ECDSAKeyProvider {
 		byte[] keyBytes = Files.readAllBytes(path);
 
 		String pem = new String(keyBytes);
+
 		if (pem.contains("BEGIN")) {
 			pem = pem
 					.replace("-----BEGIN PRIVATE KEY-----", "")
@@ -69,6 +70,7 @@ public class JWTKeyPair implements ECDSAKeyProvider {
 		byte[] keyBytes = Files.readAllBytes(path);
 
 		String pem = new String(keyBytes);
+
 		if (pem.contains("BEGIN")) {
 			pem = pem
 					.replace("-----BEGIN PUBLIC KEY-----", "")

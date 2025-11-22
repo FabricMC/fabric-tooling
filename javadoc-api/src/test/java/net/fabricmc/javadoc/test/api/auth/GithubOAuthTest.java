@@ -1,7 +1,12 @@
 package net.fabricmc.javadoc.test.api.auth;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -36,8 +41,7 @@ public class GithubOAuthTest extends AbstractApiTest {
 		String url = json.get("url").getAsString();
 		assertNotNull(url);
 		assertFalse(url.isEmpty());
-		assertTrue(url.startsWith("https://github.com/login/oauth/authorize"),
-			"URL should start with GitHub OAuth URL");
+		assertTrue(url.startsWith("https://github.com/login/oauth/authorize"), "URL should start with GitHub OAuth URL");
 	}
 
 	@Test
@@ -65,8 +69,7 @@ public class GithubOAuthTest extends AbstractApiTest {
 		JsonObject json = JsonParser.parseString(body).getAsJsonObject();
 		String url = json.get("url").getAsString();
 
-		assertTrue(url.contains("read%3Auser") || url.contains("read:user"),
-			"URL should contain read:user scope");
+		assertTrue(url.contains("read%3Auser") || url.contains("read:user"), "URL should contain read:user scope");
 	}
 
 	@Test
@@ -102,8 +105,7 @@ public class GithubOAuthTest extends AbstractApiTest {
 
 		String contentType = response.header("Content-Type");
 		assertNotNull(contentType);
-		assertTrue(contentType.contains("application/json"),
-			"Content-Type should be application/json");
+		assertTrue(contentType.contains("application/json"), "Content-Type should be application/json");
 	}
 
 	@Test
@@ -124,17 +126,17 @@ public class GithubOAuthTest extends AbstractApiTest {
 		Response urlResponse = client.get("/v1/auth/github");
 		assertStatus(HttpStatus.OK, urlResponse);
 		String testCode = extractParameter(
-			JsonParser.parseString(urlResponse.body().string()).getAsJsonObject().get("url").getAsString(),
-			"state"
+				JsonParser.parseString(urlResponse.body().string()).getAsJsonObject().get("url").getAsString(),
+				"state"
 		);
 
 		String testAccessToken = "gho_testAccessToken";
 		GithubAPI.GithubUser testUser = new GithubAPI.GithubUser(123456L, "Test User", "testuser");
 
 		Mockito.when(mockGithubApi.accessToken(anyString(), anyString(), eq(testCode), anyString()))
-			.thenReturn(testAccessToken);
+				.thenReturn(testAccessToken);
 		Mockito.when(mockGithubApi.getUser(testAccessToken))
-			.thenReturn(testUser);
+				.thenReturn(testUser);
 
 		String state = generateValidState();
 
@@ -187,11 +189,11 @@ public class GithubOAuthTest extends AbstractApiTest {
 	@Test
 	void githubLandingExpiredState() {
 		String expiredState = JWT.create()
-			.withIssuer(config.jwt().issuer())
-			.withExpiresAt(Instant.now().minus(Duration.ofMinutes(1)))
-			.withJWTId(UUID.randomUUID().toString())
-			.withClaim("plt", "github")
-			.sign(config.jwt().algorithm());
+				.withIssuer(config.jwt().issuer())
+				.withExpiresAt(Instant.now().minus(Duration.ofMinutes(1)))
+				.withJWTId(UUID.randomUUID().toString())
+				.withClaim("plt", "github")
+				.sign(config.jwt().algorithm());
 
 		Response response = client.get("/v1/auth/github/landing?code=test_code&state=" + expiredState);
 
@@ -201,11 +203,11 @@ public class GithubOAuthTest extends AbstractApiTest {
 	@Test
 	void githubLandingWrongPlatformInState() {
 		String wrongPlatformState = JWT.create()
-			.withIssuer(config.jwt().issuer())
-			.withExpiresAt(Instant.now().plus(Duration.ofMinutes(10)))
-			.withJWTId(UUID.randomUUID().toString())
-			.withClaim("plt", "discord")
-			.sign(config.jwt().algorithm());
+				.withIssuer(config.jwt().issuer())
+				.withExpiresAt(Instant.now().plus(Duration.ofMinutes(10)))
+				.withJWTId(UUID.randomUUID().toString())
+				.withClaim("plt", "discord")
+				.sign(config.jwt().algorithm());
 
 		Response response = client.get("/v1/auth/github/landing?code=test_code&state=" + wrongPlatformState);
 
@@ -215,7 +217,7 @@ public class GithubOAuthTest extends AbstractApiTest {
 	@Test
 	void githubLandingGithubApiAccessTokenFailure() throws Exception {
 		Mockito.when(mockGithubApi.accessToken(anyString(), anyString(), anyString(), anyString()))
-			.thenThrow(new IOException("GitHub API error"));
+				.thenThrow(new IOException("GitHub API error"));
 
 		String state = generateValidState();
 
@@ -230,9 +232,9 @@ public class GithubOAuthTest extends AbstractApiTest {
 		String testAccessToken = "gho_testAccessToken";
 
 		Mockito.when(mockGithubApi.accessToken(anyString(), anyString(), eq(testCode), anyString()))
-			.thenReturn(testAccessToken);
+				.thenReturn(testAccessToken);
 		Mockito.when(mockGithubApi.getUser(testAccessToken))
-			.thenThrow(new IOException("GitHub user API error"));
+				.thenThrow(new IOException("GitHub user API error"));
 
 		String state = generateValidState();
 
@@ -248,9 +250,9 @@ public class GithubOAuthTest extends AbstractApiTest {
 		GithubAPI.GithubUser testUser = new GithubAPI.GithubUser(999L, "Test", "test");
 
 		Mockito.when(mockGithubApi.accessToken(anyString(), anyString(), eq(testCode), anyString()))
-			.thenReturn(testAccessToken);
+				.thenReturn(testAccessToken);
 		Mockito.when(mockGithubApi.getUser(testAccessToken))
-			.thenReturn(testUser);
+				.thenReturn(testUser);
 
 		String state = generateValidState();
 
@@ -260,8 +262,7 @@ public class GithubOAuthTest extends AbstractApiTest {
 
 		String setCookie = response.header("Set-Cookie");
 		assertNotNull(setCookie);
-		assertTrue(setCookie.contains("Path=/v1/auth/refresh"),
-			"Cookie path should be /v1/auth/refresh");
+		assertTrue(setCookie.contains("Path=/v1/auth/refresh"), "Cookie path should be /v1/auth/refresh");
 	}
 
 	@Test
@@ -271,9 +272,9 @@ public class GithubOAuthTest extends AbstractApiTest {
 		GithubAPI.GithubUser testUser = new GithubAPI.GithubUser(777L, "User", "user");
 
 		Mockito.when(mockGithubApi.accessToken(anyString(), anyString(), eq(testCode), anyString()))
-			.thenReturn(testAccessToken);
+				.thenReturn(testAccessToken);
 		Mockito.when(mockGithubApi.getUser(testAccessToken))
-			.thenReturn(testUser);
+				.thenReturn(testUser);
 
 		String state = generateValidState();
 
@@ -283,8 +284,7 @@ public class GithubOAuthTest extends AbstractApiTest {
 
 		String setCookie = response.header("Set-Cookie");
 		assertNotNull(setCookie);
-		assertTrue(setCookie.contains("Max-Age=604800"),
-			"Cookie should have 7 day max age (604800 seconds)");
+		assertTrue(setCookie.contains("Max-Age=604800"), "Cookie should have 7 day max age (604800 seconds)");
 	}
 
 	private String generateValidState() {
@@ -298,12 +298,15 @@ public class GithubOAuthTest extends AbstractApiTest {
 
 	private String extractParameter(String url, String paramName) {
 		int startIndex = url.indexOf(paramName + "=");
+
 		if (startIndex == -1) {
 			return null;
 		}
+
 		startIndex += paramName.length() + 1;
 
 		int endIndex = url.indexOf("&", startIndex);
+
 		if (endIndex == -1) {
 			endIndex = url.length();
 		}
