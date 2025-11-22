@@ -12,6 +12,7 @@ import net.fabricmc.javadoc.Config;
 import net.fabricmc.javadoc.auth.AuthPlatform;
 import net.fabricmc.javadoc.thirdparty.GithubAPI;
 
+// TODO support PKCE
 public class GithubOAuthProvider extends OAuthProvider {
 	private static final Logger LOGGER = LoggerFactory.getLogger(GithubOAuthProvider.class);
 

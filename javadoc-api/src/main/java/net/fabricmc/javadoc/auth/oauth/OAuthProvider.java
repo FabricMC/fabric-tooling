@@ -78,10 +78,11 @@ public abstract class OAuthProvider {
 		try {
 			// Verify that the request provided a valid state parameter.
 			JWT.require(config.jwt().algorithm())
-				.withIssuer(config.jwt().issuer())
-				.withClaim("plt", platform)
-				.build();
-		}  catch (JWTVerificationException e) {
+					.withIssuer(config.jwt().issuer())
+					.withClaim("plt", platform)
+					.build()
+					.verify(state);
+		} catch (JWTVerificationException e) {
 			throw new UnauthorizedResponse("Invalid state parameter");
 		}
 

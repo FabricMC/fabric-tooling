@@ -25,6 +25,7 @@ dependencies {
 	implementation 'org.jetbrains:annotations:26.0.2'
 
 	testImplementation 'io.javalin:javalin-testtools:6.7.0'
+	testImplementation 'org.mockito:mockito-core:5.20.0'
 }
 
 application {

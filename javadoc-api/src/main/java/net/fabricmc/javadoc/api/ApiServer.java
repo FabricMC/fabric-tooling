@@ -21,16 +21,15 @@ import net.fabricmc.javadoc.api.v1.RoleAuthenticationHandler;
 import net.fabricmc.javadoc.auth.impl.AccessTokenControllerImpl;
 import net.fabricmc.javadoc.auth.impl.RefreshTokenControllerImpl;
 import net.fabricmc.javadoc.auth.oauth.GithubOAuthProvider;
-import net.fabricmc.javadoc.thirdparty.GithubAPIImpl;
+import net.fabricmc.javadoc.thirdparty.ExternalApis;
 
 public class ApiServer {
 	private final Javalin app;
 
-	public ApiServer(Config appConfig) {
+	public ApiServer(Config appConfig, ExternalApis externalApis) {
 		var refreshTokenController = new RefreshTokenControllerImpl(appConfig);
 		var accessTokenController = new AccessTokenControllerImpl(appConfig);
-		var githubAPI = new GithubAPIImpl();
-		var githubOAuthProvider = new GithubOAuthProvider(appConfig, githubAPI);
+		var githubOAuthProvider = new GithubOAuthProvider(appConfig, externalApis.github());
 		var roleAuthenticationHandler = new RoleAuthenticationHandler(refreshTokenController);
 		var authApi = new AuthApi(appConfig, accessTokenController, refreshTokenController, githubOAuthProvider);
 

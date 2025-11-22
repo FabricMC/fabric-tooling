@@ -9,28 +9,31 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.spec.ECGenParameterSpec;
 
-import com.google.gson.Gson;
 import io.javalin.Javalin;
 import io.javalin.http.HttpStatus;
-import io.javalin.testtools.DefaultTestConfig;
+import io.javalin.http.util.RateLimitUtil;
 import io.javalin.testtools.HttpClient;
+import okhttp3.OkHttpClient;
 import okhttp3.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mockito;
 
 import net.fabricmc.javadoc.Config;
 import net.fabricmc.javadoc.api.ApiServer;
+import net.fabricmc.javadoc.thirdparty.ExternalApis;
+import net.fabricmc.javadoc.thirdparty.GithubAPI;
 
 public abstract class AbstractApiTest {
-	private static final Gson GSON = new Gson();
-
 	@TempDir
 	private static Path tempDir;
 
 	protected static Config config;
+
+	protected GithubAPI mockGithubApi;
 
 	protected ApiServer server;
 	protected Javalin app;
@@ -47,17 +50,25 @@ public abstract class AbstractApiTest {
 
 	@BeforeEach
 	void setUp() {
-		server = new ApiServer(config);
+		mockGithubApi = Mockito.mock(GithubAPI.class);
+		var externalApis = new ExternalApis(mockGithubApi);
+		server = new ApiServer(config, externalApis);
 
 		app = server.getApp();
 		app.start(0);
 
-		client = new HttpClient(app, DefaultTestConfig.getOkHttpClient());
+		client = new HttpClient(app, new OkHttpClient.Builder()
+				.followRedirects(false)
+				.followSslRedirects(false)
+				.build());
 	}
 
 	@AfterEach
 	void tearDown() {
 		app.stop();
+
+		// Reset rate limit
+		RateLimitUtil.INSTANCE.getLimiters().clear();
 	}
 
 	protected void assertStatus(HttpStatus status, Response response) {
