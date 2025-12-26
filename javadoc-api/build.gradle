@@ -29,7 +29,7 @@ dependencies {
 }
 
 application {
-	mainClass = 'net.fabricmc.imfwd.Main'
+	mainClass = 'net.fabricmc.javadoc.Main'
 }
 
 jar {

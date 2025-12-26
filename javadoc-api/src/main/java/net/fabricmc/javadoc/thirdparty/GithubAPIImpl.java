@@ -33,6 +33,10 @@ public class GithubAPIImpl implements GithubAPI {
 				throw new RuntimeException(e);
 			}
 
+			if (response.statusCode() != 200) {
+				throw new IOException("Failed to get access token from GitHub: " + response.body());
+			}
+
 			AccessTokenResponse accessTokenResponse = GSON.fromJson(response.body(), AccessTokenResponse.class);
 			return accessTokenResponse.accessToken();
 		}
@@ -53,6 +57,10 @@ public class GithubAPIImpl implements GithubAPI {
 				response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 			} catch (InterruptedException e) {
 				throw new RuntimeException(e);
+			}
+
+			if (response.statusCode() != 200) {
+				throw new IOException("Failed to get user from GitHub: " + response.body());
 			}
 
 			return GSON.fromJson(response.body(), GithubUser.class);
