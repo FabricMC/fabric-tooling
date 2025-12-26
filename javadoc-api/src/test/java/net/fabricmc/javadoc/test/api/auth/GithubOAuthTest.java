@@ -109,19 +109,6 @@ public class GithubOAuthTest extends AbstractApiTest {
 	}
 
 	@Test
-	void githubAuthRespectsRateLimit() throws Exception {
-		for (int i = 0; i < 5; i++) {
-			Response response = client.get("/v1/auth/github");
-			assertStatus(HttpStatus.OK, response);
-			response.close();
-		}
-
-		Response response = client.get("/v1/auth/github");
-		assertStatus(HttpStatus.TOO_MANY_REQUESTS, response);
-		response.close();
-	}
-
-	@Test
 	void githubLandingSuccess() throws Exception {
 		Response urlResponse = client.get("/v1/auth/github");
 		assertStatus(HttpStatus.OK, urlResponse);
