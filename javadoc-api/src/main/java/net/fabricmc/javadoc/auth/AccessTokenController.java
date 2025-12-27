@@ -8,4 +8,6 @@ public interface AccessTokenController {
 	 * @return A new access token JWT as a String.
 	 */
 	String newAccessToken(RefreshToken refreshToken);
+
+	AccessToken parseAndValidateAccessToken(String jwt);
 }

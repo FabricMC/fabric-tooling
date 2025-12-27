@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
 import io.javalin.http.Cookie;
+import io.javalin.http.HttpStatus;
 import io.javalin.http.SameSite;
 import io.javalin.http.util.NaiveRateLimit;
 import io.javalin.openapi.HttpMethod;
@@ -41,6 +42,7 @@ public record AuthApi(
 			get("github", this::github, Role.OPEN);
 			get("github/landing", this::githubLanding, Role.OPEN);
 			post("refresh", this::refresh, Role.REFRESH_TOKEN);
+			get("check", this::check, Role.ACCESS_TOKEN);
 		};
 	}
 
@@ -137,4 +139,20 @@ public record AuthApi(
 	}
 
 	private record RefreshResponse(String accessToken) { }
+
+	@OpenApi(
+			path = "/v1/auth/check",
+			methods = HttpMethod.GET,
+			summary = "Check the validity of the access token",
+			headers = {@OpenApiParam(name = "Authorization", description = "The access token bearer token", required = true)},
+			tags = "Auth",
+			operationId = "checkAccessToken",
+			responses = {
+					@OpenApiResponse(status = "200", description = "Access token is valid"),
+					@OpenApiResponse(status = "401", description = "Unauthorized - Missing or invalid access token")
+			}
+	)
+	private void check(Context context) {
+		context.status(HttpStatus.OK);
+	}
 }

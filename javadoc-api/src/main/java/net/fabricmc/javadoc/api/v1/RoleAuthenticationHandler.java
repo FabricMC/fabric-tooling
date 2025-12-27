@@ -11,10 +11,12 @@ import org.jetbrains.annotations.NotNull;
 
 import net.fabricmc.javadoc.api.util.Attributes;
 import net.fabricmc.javadoc.api.util.Role;
+import net.fabricmc.javadoc.auth.AccessToken;
+import net.fabricmc.javadoc.auth.AccessTokenController;
 import net.fabricmc.javadoc.auth.RefreshToken;
 import net.fabricmc.javadoc.auth.RefreshTokenController;
 
-public record RoleAuthenticationHandler(RefreshTokenController refreshTokenController) implements Handler {
+public record RoleAuthenticationHandler(RefreshTokenController refreshTokenController, AccessTokenController accessTokenController) implements Handler {
 	@Override
 	public void handle(@NotNull Context ctx) throws Exception {
 		Set<RouteRole> routeRoles = ctx.routeRoles();
@@ -44,8 +46,17 @@ public record RoleAuthenticationHandler(RefreshTokenController refreshTokenContr
 			Attributes.REFRESH_TOKEN.set(ctx, refreshToken);
 			return;
 		}
-		case AUTH_TOKEN -> {
-			break;
+		case ACCESS_TOKEN -> {
+			String authorization = ctx.header("Authorization");
+			String token = authorization != null && authorization.startsWith("Bearer ") ? authorization.substring(7) : null;
+
+			if (token == null) {
+				throw new UnauthorizedResponse("Missing or invalid Authorization header");
+			}
+
+			AccessToken accessToken = accessTokenController.parseAndValidateAccessToken(token);
+			Attributes.ACCESS_TOKEN.set(ctx, accessToken);
+			return;
 		}
 		}
 

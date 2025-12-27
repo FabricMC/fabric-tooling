@@ -8,12 +8,19 @@ import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.spec.ECGenParameterSpec;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Locale;
+import java.util.UUID;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTCreator;
 import io.javalin.Javalin;
 import io.javalin.http.HttpStatus;
 import io.javalin.http.util.RateLimitUtil;
 import io.javalin.testtools.HttpClient;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import okhttp3.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -24,6 +31,8 @@ import org.mockito.Mockito;
 
 import net.fabricmc.javadoc.Config;
 import net.fabricmc.javadoc.api.ApiServer;
+import net.fabricmc.javadoc.auth.AuthPlatform;
+import net.fabricmc.javadoc.auth.PermissionGroup;
 import net.fabricmc.javadoc.thirdparty.ExternalApis;
 import net.fabricmc.javadoc.thirdparty.GithubAPI;
 
@@ -69,6 +78,21 @@ public abstract class AbstractApiTest {
 
 		// Reset rate limit
 		RateLimitUtil.INSTANCE.getLimiters().clear();
+	}
+
+	protected void withAccessToken(Request.Builder builder) {
+		JWTCreator.Builder jwt = JWT.create()
+				.withIssuer(config.jwt().issuer())
+				.withExpiresAt(Instant.now().plus(Duration.ofMinutes(1)))
+				.withJWTId(UUID.randomUUID().toString())
+				.withClaim("role", PermissionGroup.USER.name().toLowerCase(Locale.ROOT))
+				.withClaim("plt", AuthPlatform.GITHUB.name().toLowerCase(Locale.ROOT))
+				.withClaim("userid", 0)
+				.withSubject("Test")
+				.withClaim("type", "access");
+
+		String accessToken = jwt.sign(config.jwt().algorithm());
+		builder.addHeader("Authorization", "Bearer " + accessToken);
 	}
 
 	protected void assertStatus(HttpStatus status, Response response) {

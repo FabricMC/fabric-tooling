@@ -5,7 +5,7 @@ import io.javalin.security.RouteRole;
 /**
  * The authentication roles for a given API endpoint.
  *
- * <p>If unsure choose {@link Role#AUTH_TOKEN}
+ * <p>If unsure choose {@link Role#ACCESS_TOKEN}
  */
 public enum Role implements RouteRole {
 	/**
@@ -19,7 +19,7 @@ public enum Role implements RouteRole {
 	REFRESH_TOKEN,
 
 	/**
-	 * API endpoint requires an access token.
+	 * API endpoint requires an access token. (The default choice)
 	 */
-	AUTH_TOKEN
+	ACCESS_TOKEN
 }

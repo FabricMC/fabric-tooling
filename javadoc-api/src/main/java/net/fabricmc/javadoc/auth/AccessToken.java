@@ -6,10 +6,11 @@ import java.util.UUID;
 import com.auth0.jwt.JWTCreator;
 import com.auth0.jwt.interfaces.DecodedJWT;
 
-public record RefreshToken(UUID uuid, AuthPlatform platform, User user) {
-	public static RefreshToken fromJwt(DecodedJWT jwt) {
-		return new RefreshToken(
+public record AccessToken(UUID uuid, PermissionGroup role, AuthPlatform platform, User user) {
+	public static AccessToken fromJwt(DecodedJWT jwt) {
+		return new AccessToken(
 				UUID.fromString(jwt.getId()),
+				PermissionGroup.getByName(jwt.getClaim("role").asString()),
 				AuthPlatform.getByName(jwt.getClaim("plt").asString()),
 				new User(
 						jwt.getClaim("userid").asLong(),
@@ -20,10 +21,11 @@ public record RefreshToken(UUID uuid, AuthPlatform platform, User user) {
 
 	public void applyToJWT(JWTCreator.Builder jwt) {
 		jwt.withJWTId(uuid.toString())
+				.withClaim("role", role.name().toLowerCase(Locale.ROOT))
 				.withClaim("plt", platform.name().toLowerCase(Locale.ROOT))
 				.withClaim("userid", user.id)
 				.withSubject(user.displayName)
-				.withClaim("type", "refresh");
+				.withClaim("type", "access");
 	}
 
 	public record User(long id, String displayName) { }

@@ -17,21 +17,27 @@ import org.jetbrains.annotations.VisibleForTesting;
 
 import net.fabricmc.javadoc.Config;
 import net.fabricmc.javadoc.api.v1.AuthApi;
+import net.fabricmc.javadoc.api.v1.JavadocApi;
 import net.fabricmc.javadoc.api.v1.RoleAuthenticationHandler;
 import net.fabricmc.javadoc.auth.impl.AccessTokenControllerImpl;
 import net.fabricmc.javadoc.auth.impl.RefreshTokenControllerImpl;
 import net.fabricmc.javadoc.auth.oauth.GithubOAuthProvider;
+import net.fabricmc.javadoc.database.InMemoryJavadocDatabase;
+import net.fabricmc.javadoc.database.JavadocDatabase;
 import net.fabricmc.javadoc.thirdparty.ExternalApis;
 
 public class ApiServer {
 	private final Javalin app;
+	private final JavadocDatabase javadocDatabase;
 
 	public ApiServer(Config appConfig, ExternalApis externalApis) {
 		var refreshTokenController = new RefreshTokenControllerImpl(appConfig);
 		var accessTokenController = new AccessTokenControllerImpl(appConfig);
 		var githubOAuthProvider = new GithubOAuthProvider(appConfig, externalApis.github());
-		var roleAuthenticationHandler = new RoleAuthenticationHandler(refreshTokenController);
+		var roleAuthenticationHandler = new RoleAuthenticationHandler(refreshTokenController, accessTokenController);
 		var authApi = new AuthApi(appConfig, accessTokenController, refreshTokenController, githubOAuthProvider);
+		this.javadocDatabase = new InMemoryJavadocDatabase();
+		var javadocApi = new JavadocApi(this.javadocDatabase);
 
 		this.app = Javalin.create(config -> {
 			config.showJavalinBanner = false;
@@ -51,6 +57,7 @@ public class ApiServer {
 			}).apiBuilder(() -> {
 				path("/v1", () -> {
 					path("/auth", authApi.endpoints());
+					path("/javadoc", javadocApi.endpoints());
 				});
 
 				get("/", this::handleRoot);
@@ -70,6 +77,11 @@ public class ApiServer {
 	@VisibleForTesting
 	public Javalin getApp() {
 		return app;
+	}
+
+	@VisibleForTesting
+	public JavadocDatabase getJavadocDatabase() {
+		return javadocDatabase;
 	}
 
 	private static String readResource(String name) {

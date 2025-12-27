@@ -12,5 +12,15 @@ public enum PermissionGroup {
 	/**
 	 * Administrator with full permissions.
 	 */
-	ADMIN
+	ADMIN;
+
+	public static PermissionGroup getByName(String name) {
+		for (PermissionGroup group : values()) {
+			if (group.name().equalsIgnoreCase(name)) {
+				return group;
+			}
+		}
+
+		throw new IllegalArgumentException("No PermissionGroup with name: " + name);
+	}
 }

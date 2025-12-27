@@ -1,4 +1,4 @@
-package net.fabricmc.javadoc.test.api.auth;
+package net.fabricmc.javadoc.test.api;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
