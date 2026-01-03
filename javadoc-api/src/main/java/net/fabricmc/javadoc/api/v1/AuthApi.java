@@ -12,11 +12,6 @@ import io.javalin.http.Cookie;
 import io.javalin.http.HttpStatus;
 import io.javalin.http.SameSite;
 import io.javalin.http.util.NaiveRateLimit;
-import io.javalin.openapi.HttpMethod;
-import io.javalin.openapi.OpenApi;
-import io.javalin.openapi.OpenApiContent;
-import io.javalin.openapi.OpenApiParam;
-import io.javalin.openapi.OpenApiResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,14 +41,6 @@ public record AuthApi(
 		};
 	}
 
-	@OpenApi(
-			path = "/v1/auth/discord",
-			methods = HttpMethod.GET,
-			summary = "Request a Discord OAuth url",
-			tags = "Auth",
-			operationId = "discordAuth",
-			responses = @OpenApiResponse(status = "200", content = @OpenApiContent(from = DiscordResponse.class))
-	)
 	private void discord(Context context) {
 		NaiveRateLimit.requestPerTimeUnit(context, 5, TimeUnit.MINUTES);
 
@@ -62,14 +49,6 @@ public record AuthApi(
 
 	private record DiscordResponse(String url) { }
 
-	@OpenApi(
-			path = "/v1/auth/github",
-			methods = HttpMethod.GET,
-			summary = "Request a Github OAuth url",
-			tags = "Auth",
-			operationId = "githubAuth",
-			responses = @OpenApiResponse(status = "200", content = @OpenApiContent(from = GitHubResponse.class))
-	)
 	private void github(Context context) {
 		NaiveRateLimit.requestPerTimeUnit(context, 5, TimeUnit.MINUTES);
 		LOGGER.info("Providing Github OAuth URL to {}", context.req().getRemoteAddr());
@@ -80,17 +59,6 @@ public record AuthApi(
 
 	private record GitHubResponse(String url) { }
 
-	@OpenApi(
-			path = "/v1/auth/github/landing",
-			methods = HttpMethod.GET,
-			summary = "Github OAuth landing endpoint",
-			tags = "Auth",
-			queryParams = {
-				@OpenApiParam(name = "code", required = true, description = "The OAuth code from Github"),
-				@OpenApiParam(name = "state", required = true, description = "The OAuth state from Github")
-			},
-			responses = @OpenApiResponse(status = "302")
-	)
 	private void githubLanding(Context context) {
 		NaiveRateLimit.requestPerTimeUnit(context, 5, TimeUnit.MINUTES);
 
@@ -121,15 +89,6 @@ public record AuthApi(
 		context.redirect(config().apiUrl());
 	}
 
-	@OpenApi(
-			path = "/v1/auth/refresh",
-			methods = HttpMethod.POST,
-			summary = "Refresh the access token",
-			cookies = {@OpenApiParam(name = "refreshToken", description = "The refresh token cookie", required = true)},
-			tags = "Auth",
-			operationId = "refreshAccessToken",
-			responses = @OpenApiResponse(status = "200", content = @OpenApiContent(from = RefreshResponse.class))
-	)
 	private void refresh(Context context) {
 		NaiveRateLimit.requestPerTimeUnit(context, 5, TimeUnit.MINUTES);
 
@@ -140,18 +99,6 @@ public record AuthApi(
 
 	private record RefreshResponse(String accessToken) { }
 
-	@OpenApi(
-			path = "/v1/auth/check",
-			methods = HttpMethod.GET,
-			summary = "Check the validity of the access token",
-			headers = {@OpenApiParam(name = "Authorization", description = "The access token bearer token", required = true)},
-			tags = "Auth",
-			operationId = "checkAccessToken",
-			responses = {
-					@OpenApiResponse(status = "200", description = "Access token is valid"),
-					@OpenApiResponse(status = "401", description = "Unauthorized - Missing or invalid access token")
-			}
-	)
 	private void check(Context context) {
 		context.status(HttpStatus.OK);
 	}

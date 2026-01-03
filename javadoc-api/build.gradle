@@ -15,12 +15,6 @@ dependencies {
 	implementation 'org.slf4j:slf4j-simple:2.0.16'
 	implementation 'com.google.code.gson:gson:2.13.2'
 
-	implementation 'io.javalin.community.openapi:javalin-openapi-plugin:6.7.0'
-	implementation 'io.javalin.community.openapi:javalin-swagger-plugin:6.7.0'
-	implementation 'io.javalin.community.openapi:javalin-redoc-plugin:6.7.0'
-
-	annotationProcessor 'io.javalin.community.openapi:openapi-annotation-processor:6.7.0'
-
 	implementation 'org.jspecify:jspecify:1.0.0'
 	implementation 'org.jetbrains:annotations:26.0.2'
 

@@ -8,15 +8,6 @@ import java.util.Map;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
-import io.javalin.openapi.HttpMethod;
-import io.javalin.openapi.OpenApi;
-import io.javalin.openapi.OpenApiContent;
-import io.javalin.openapi.OpenApiExample;
-import io.javalin.openapi.OpenApiExampleProperty;
-import io.javalin.openapi.OpenApiNullable;
-import io.javalin.openapi.OpenApiParam;
-import io.javalin.openapi.OpenApiRequestBody;
-import io.javalin.openapi.OpenApiResponse;
 import org.jspecify.annotations.Nullable;
 
 import net.fabricmc.javadoc.api.util.Role;
@@ -30,52 +21,6 @@ public record JavadocApi(JavadocDatabase javadocDatabase) {
 		};
 	}
 
-	@OpenApi(
-			path = "/v1/javadoc/{version}",
-			pathParams = {
-				@OpenApiParam(name = "version", description = "The Minecraft version", example = "26.1", required = true)
-			},
-			methods = HttpMethod.POST,
-			summary = "Request the Javadoc for a given class and it's inner classes",
-			tags = "Auth",
-			operationId = "getJavadoc",
-			requestBody = @OpenApiRequestBody(
-					content = @OpenApiContent(
-							from = JavadocRequest.class,
-							exampleObjects = {
-									@OpenApiExampleProperty(name = "className", value = "net/minecraft/client/Minecraft")
-							}
-					)
-			),
-			responses = {
-					@OpenApiResponse(
-						status = "200",
-						content = @OpenApiContent(
-								from = JavadocResponse.class,
-								exampleObjects = {
-										@OpenApiExampleProperty(name = "data", objects = {
-												@OpenApiExampleProperty(name = "net/minecraft/client/Minecraft", objects = {
-														@OpenApiExampleProperty(name = "value", value = "The main Minecraft client class"),
-														@OpenApiExampleProperty(name = "methods", objects = {
-																@OpenApiExampleProperty(name = "getInstance()Lnet/minecraft/client/Minecraft;", value = "Returns the singleton instance of the Minecraft client"),
-																@OpenApiExampleProperty(name = "getWindow()Lcom/mojang/blaze3d/platform/Window;", value = "Gets the game window")
-														}),
-														@OpenApiExampleProperty(name = "fields", objects = {
-																@OpenApiExampleProperty(name = "instance:Lnet/minecraft/client/Minecraft;", value = "Current frames per second"),
-																@OpenApiExampleProperty(name = "fps:I", value = "Gets the game window")
-														})
-												}),
-												@OpenApiExampleProperty(name = "net/minecraft/client/Minecraft$Inner", objects = {
-														@OpenApiExampleProperty(name = "value", value = "An inner class of Minecraft"),
-												})
-										})
-								}
-						)
-					),
-					@OpenApiResponse(status = "401", description = "Unauthorized - Missing or invalid auth token"),
-					@OpenApiResponse(status = "404", description = "Javadoc not found for the given class")
-			}
-	)
 	private void getJavadoc(Context context) {
 		JavadocRequest request = context.bodyAsClass(JavadocRequest.class);
 
@@ -96,50 +41,19 @@ public record JavadocApi(JavadocDatabase javadocDatabase) {
 		context.json(new JavadocResponse(Map.of(request.className, entry)));
 	}
 
-	public record JavadocRequest(@OpenApiExample(value = "net/minecraft/client/Minecraft") String className) { }
+	public record JavadocRequest(String className) { }
 
 	public record JavadocResponse(Map<String, JavadocEntry> data) { }
 
 	public record JavadocEntry(
 			@Nullable
-			@OpenApiNullable
 			String value,
 			@Nullable
-			@OpenApiNullable
 			Map<String, String> methods,
 			@Nullable
-			@OpenApiNullable
 			Map<String, String> fields
 	) { }
 
-	@OpenApi(
-			path = "/v1/javadoc/{version}",
-			pathParams = {
-				@OpenApiParam(name = "version", description = "The Minecraft version", example = "26.1", required = true)
-			},
-			methods = HttpMethod.PATCH,
-			summary = "Update the Javadoc for a given class, method, or field",
-			tags = "Auth",
-			operationId = "updateJavadoc",
-			requestBody = @OpenApiRequestBody(
-					content = @OpenApiContent(
-							from = UpdateJavadocRequest.class,
-							exampleObjects = {
-									@OpenApiExampleProperty(name = "className", value = "net/minecraft/client/Minecraft"),
-									@OpenApiExampleProperty(name = "target", objects = {
-											@OpenApiExampleProperty(name = "type", value = "method"),
-											@OpenApiExampleProperty(name = "name", value = "getInstance"),
-											@OpenApiExampleProperty(name = "descriptor", value = "()Lnet/minecraft/client/Minecraft;")
-									}),
-									@OpenApiExampleProperty(name = "documentation", value = "The documentation string\nin markdown format.")
-							}
-					)
-			),
-			responses = {
-				@OpenApiResponse(status = "401", description = "Unauthorized - Missing or invalid auth token"),
-				@OpenApiResponse(status = "200", description = "Javadoc updated successfully"),
-			}
-	)
 	private void updateJavadoc(Context context) {
 		UpdateJavadocRequest request = context.bodyAsClass(UpdateJavadocRequest.class);
 
@@ -167,7 +81,6 @@ public record JavadocApi(JavadocDatabase javadocDatabase) {
 	public record UpdateJavadocRequest(
 			String className,
 			@Nullable
-			@OpenApiNullable
 			UpdateTarget target,
 			String documentation
 	) { }
