@@ -52,8 +52,8 @@ public abstract class AbstractApiTest {
 	static void setUpClass() throws Exception {
 		KeyPairPath keyPair = generateJWTKeyPair();
 		String str = readResource("config.json")
-				.replace("%private_key%", keyPair.privateKey.toString())
-				.replace("%public_key%", keyPair.publicKey.toString());
+				.replace("%private_key%", keyPair.privateKey.toString().replace("\\", "\\\\"))
+				.replace("%public_key%", keyPair.publicKey.toString()).replace("\\", "\\\\");
 		config = Config.parse(str);
 	}
 
