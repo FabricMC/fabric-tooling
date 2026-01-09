@@ -13,6 +13,8 @@ public interface GithubAPI {
 	 */
 	GithubUser getUser(String token) throws IOException;
 
+	boolean isTeamMember(String org, String teamSlug, long userId) throws IOException;
+
 	record GithubUser(
 			long id,
 			String name,

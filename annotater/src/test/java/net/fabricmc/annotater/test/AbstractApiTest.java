@@ -58,8 +58,11 @@ public abstract class AbstractApiTest {
 	}
 
 	@BeforeEach
-	void setUp() {
+	void setUp() throws Exception {
 		mockGithubApi = Mockito.mock(GithubAPI.class);
+		// Mock team membership checks to return false by default (user is not in any team)
+		Mockito.when(mockGithubApi.isTeamMember(Mockito.anyString(), Mockito.anyString(), Mockito.anyLong()))
+				.thenReturn(false);
 		var externalApis = new ExternalApis(mockGithubApi);
 		server = new ApiServer(config, externalApis);
 
@@ -97,6 +100,24 @@ public abstract class AbstractApiTest {
 
 	protected void assertStatus(HttpStatus status, Response response) {
 		Assertions.assertEquals(status.getCode(), response.code(), "Expected HTTP status " + status + " but got " + HttpStatus.forStatus(response.code()));
+	}
+
+	protected String extractCookieValue(String setCookie, String cookieName) {
+		String prefix = cookieName + "=";
+		int startIndex = setCookie.indexOf(prefix);
+
+		if (startIndex == -1) {
+			return null;
+		}
+
+		startIndex += prefix.length();
+		int endIndex = setCookie.indexOf(";", startIndex);
+
+		if (endIndex == -1) {
+			endIndex = setCookie.length();
+		}
+
+		return setCookie.substring(startIndex, endIndex);
 	}
 
 	private static KeyPairPath generateJWTKeyPair() throws Exception {

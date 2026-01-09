@@ -7,6 +7,15 @@
   },
   "githubOAuth": {
     "clientID": "123",
-    "clientSecret": "456"
+    "clientSecret": "456",
+    "apiToken": "test_api_token",
+    "trustedTeam": {
+      "org": "test-org",
+      "teamSlug": "trusted-team"
+    },
+    "adminTeam": {
+      "org": "test-org",
+      "teamSlug": "admin-team"
+    }
   }
 }

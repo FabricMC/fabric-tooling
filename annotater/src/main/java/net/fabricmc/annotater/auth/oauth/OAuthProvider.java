@@ -14,6 +14,7 @@ import io.javalin.http.UnauthorizedResponse;
 
 import net.fabricmc.annotater.Config;
 import net.fabricmc.annotater.auth.AuthPlatform;
+import net.fabricmc.annotater.auth.PermissionGroup;
 import net.fabricmc.annotater.auth.RefreshToken;
 
 public abstract class OAuthProvider {
@@ -50,6 +51,8 @@ public abstract class OAuthProvider {
 	 * @return The display name of the user.
 	 */
 	protected abstract RefreshToken.User verifyUser(String code);
+
+	public abstract PermissionGroup getPermissionGroup(RefreshToken refreshToken);
 
 	/**
 	 * Start the OAuth authorisation process by constructing the authorisation URL.
