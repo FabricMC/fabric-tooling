@@ -30,16 +30,13 @@ public record AccessTokenControllerImpl(
 
 	@Override
 	public String newAccessToken(RefreshToken refreshToken) {
-		// Get the OAuth provider for the platform and query the permission group
 		OAuthProvider oAuthProvider = oAuthProviders.get(refreshToken.platform());
-		PermissionGroup permissionGroup;
 
 		if (oAuthProvider == null) {
-			// No provider configured for this platform, default to USER permissions
-			permissionGroup = PermissionGroup.USER;
-		} else {
-			permissionGroup = oAuthProvider.getPermissionGroup(refreshToken);
+			throw new UnauthorizedResponse("Unsupported authentication platform: " + refreshToken.platform());
 		}
+
+		PermissionGroup permissionGroup = oAuthProvider.getPermissionGroup(refreshToken);
 
 		AccessToken accessToken = new AccessToken(
 				UUID.randomUUID(),

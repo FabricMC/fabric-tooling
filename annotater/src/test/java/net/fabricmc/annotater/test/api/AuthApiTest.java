@@ -22,7 +22,7 @@ import net.fabricmc.annotater.test.AbstractApiTest;
 public class AuthApiTest extends AbstractApiTest {
 	@Test
 	void refreshAccessTokenSuccess() throws Exception {
-		String jwt = new RefreshTokenControllerImpl(config).newRefreshToken(AuthPlatform.DISCORD, new RefreshToken.User(1, "Test User"));
+		String jwt = new RefreshTokenControllerImpl(config).newRefreshToken(AuthPlatform.GITHUB, new RefreshToken.User(1, "Test User"));
 
 		Response response = client.post("/v1/auth/refresh", null, builder -> {
 			builder.addHeader("Cookie", "refreshToken=" + jwt);
