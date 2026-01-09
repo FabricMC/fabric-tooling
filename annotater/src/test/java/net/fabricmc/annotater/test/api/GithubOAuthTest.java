@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 import com.auth0.jwt.JWT;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.javalin.http.HttpStatus;
@@ -318,7 +319,7 @@ public class GithubOAuthTest extends AbstractApiTest {
 		String accessToken = json.get("accessToken").getAsString();
 
 		// Decode and verify the access token has USER role
-		com.auth0.jwt.interfaces.DecodedJWT decoded = JWT.decode(accessToken);
+		DecodedJWT decoded = JWT.decode(accessToken);
 		assertEquals("user", decoded.getClaim("role").asString(), "User not in any team should have USER role");
 	}
 
@@ -361,7 +362,7 @@ public class GithubOAuthTest extends AbstractApiTest {
 		String accessToken = json.get("accessToken").getAsString();
 
 		// Decode and verify the access token has TRUSTED role
-		com.auth0.jwt.interfaces.DecodedJWT decoded = JWT.decode(accessToken);
+		DecodedJWT decoded = JWT.decode(accessToken);
 		assertEquals("trusted", decoded.getClaim("role").asString(), "User in trusted team should have TRUSTED role");
 	}
 
@@ -404,7 +405,7 @@ public class GithubOAuthTest extends AbstractApiTest {
 		String accessToken = json.get("accessToken").getAsString();
 
 		// Decode and verify the access token has ADMIN role
-		com.auth0.jwt.interfaces.DecodedJWT decoded = JWT.decode(accessToken);
+		DecodedJWT decoded = JWT.decode(accessToken);
 		assertEquals("admin", decoded.getClaim("role").asString(), "User in admin team should have ADMIN role");
 	}
 
@@ -447,7 +448,7 @@ public class GithubOAuthTest extends AbstractApiTest {
 		String accessToken = json.get("accessToken").getAsString();
 
 		// Decode and verify the access token has ADMIN role (takes precedence)
-		com.auth0.jwt.interfaces.DecodedJWT decoded = JWT.decode(accessToken);
+		DecodedJWT decoded = JWT.decode(accessToken);
 		assertEquals("admin", decoded.getClaim("role").asString(), "User in both teams should have ADMIN role (takes precedence)");
 	}
 
