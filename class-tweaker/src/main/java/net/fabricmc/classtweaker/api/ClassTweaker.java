@@ -35,7 +35,8 @@ public interface ClassTweaker extends ClassTweakerVisitor {
 	int AW_V2 = 2;
 	// Class tweaker format versions.
 	int CT_V1 = 3;
-	int CT_LATEST = CT_V1;
+	int CT_V2 = 4;
+	int CT_LATEST = CT_V2;
 
 	/**
 	 * @return a new {@link ClassTweaker} instance.
@@ -65,6 +66,10 @@ public interface ClassTweaker extends ClassTweakerVisitor {
 	List<InjectedInterface> getInjectedInterfaces(String className);
 
 	Map<String, List<InjectedInterface>> getAllInjectedInterfaces();
+
+	List<EnumExtension> getEnumExtensions(String className);
+
+	Map<String, List<EnumExtension>> getAllEnumExtensions();
 
 	ClassVisitor createClassVisitor(int api, @Nullable ClassVisitor classVisitor, @Nullable BiConsumer<String, byte[]> generatedClassConsumer);
 }

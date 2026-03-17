@@ -16,6 +16,7 @@
 
 package net.fabricmc.classtweaker.writer;
 
+import net.fabricmc.classtweaker.api.ClassTweaker;
 import net.fabricmc.classtweaker.api.ClassTweakerWriter;
 import net.fabricmc.classtweaker.api.visitor.AccessWidenerVisitor;
 import net.fabricmc.classtweaker.api.visitor.ClassTweakerVisitor;
@@ -95,6 +96,19 @@ public final class ClassTweakerWriterImpl implements ClassTweakerVisitor, ClassT
 		}
 
 		builder.append("inject-interface\t").append(owner).append("\t").append(iface).append('\n');
+	}
+
+	@Override
+	public void visitEnumExtension(String owner, String addedConstant, boolean transitive) {
+		if (version < ClassTweaker.CT_V2) {
+			throw new IllegalArgumentException("Cannot write enum extension rule in version " + version);
+		}
+
+		if (transitive) {
+			builder.append("transitive-");
+		}
+
+		builder.append("extend-enum\t").append(owner).append("\t").append(addedConstant).append('\n');
 	}
 
 	@Override

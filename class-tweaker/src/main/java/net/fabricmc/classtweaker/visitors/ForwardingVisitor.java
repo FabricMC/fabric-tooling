@@ -60,6 +60,13 @@ public class ForwardingVisitor implements ClassTweakerVisitor {
 	}
 
 	@Override
+	public void visitEnumExtension(String owner, String addedConstant, boolean transitive) {
+		for (ClassTweakerVisitor visitor : visitors) {
+			visitor.visitEnumExtension(owner, addedConstant, transitive);
+		}
+	}
+
+	@Override
 	public void visitLineNumber(int lineNumber) {
 		for (ClassTweakerVisitor visitor : visitors) {
 			visitor.visitLineNumber(lineNumber);

@@ -80,4 +80,9 @@ public final class ClassTweakerRemapperVisitor implements ClassTweakerVisitor {
 
 		delegate.visitInjectedInterface(remapper.map(owner), mappedIface, transitive);
 	}
+
+	@Override
+	public void visitEnumExtension(String owner, String addedConstant, boolean transitive) {
+		delegate.visitEnumExtension(remapper.map(owner), addedConstant, transitive);
+	}
 }

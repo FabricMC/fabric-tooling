@@ -549,6 +549,17 @@ public class ClassTweakerReaderTest {
 		}
 	}
 
+	@Nested
+	class V4Parsing {
+		@Test
+		void readEnumExtensions() throws Exception {
+			String testInput = readTestInput("AccessWidenerReaderTest_enum_extension.txt");
+			parse(testInput);
+
+			assertThat(visitor.getTargets()).hasSize(1);
+		}
+	}
+
 	Map<String, AccessWidenerImpl.ClassAccess> getClasses() {
 		Map<String, AccessWidenerImpl.ClassAccess> classes = new HashMap<>();
 
