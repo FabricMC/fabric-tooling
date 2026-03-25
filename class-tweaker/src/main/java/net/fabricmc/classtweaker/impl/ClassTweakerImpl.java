@@ -156,8 +156,7 @@ public final class ClassTweakerImpl implements ClassTweaker, ClassTweakerVisitor
 
 	@Override
 	public Map<String, List<InjectedInterface>> getAllInjectedInterfaces() {
-		//noinspection unchecked
-		return Collections.unmodifiableMap((Map) injectedInterfaces);
+		return mapValues(injectedInterfaces, Collections::unmodifiableList);
 	}
 
 	@Override
