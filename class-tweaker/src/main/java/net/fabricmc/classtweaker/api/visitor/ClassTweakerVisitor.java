@@ -56,6 +56,9 @@ public interface ClassTweakerVisitor {
 	default void visitInjectedInterface(String owner, String iface, boolean transitive) {
 	}
 
+	default void visitEnumExtension(String owner, String addedConstant, boolean transitive) {
+	}
+
 	/**
 	 * Called by the reader to indicate that we are now on the given line number. Useful for reporting errors.
 	 */

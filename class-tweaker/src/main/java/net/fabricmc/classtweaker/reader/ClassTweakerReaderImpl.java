@@ -130,6 +130,18 @@ public final class ClassTweakerReaderImpl implements ClassTweakerReader {
 				}
 			}
 
+			if (version >= ClassTweaker.CT_V2) {
+				if ("extend-enum".equals(firstToken) || (TRANSITIVE_PREFIX + "extend-enum").equals(firstToken)) {
+					if (tokens.size() != 3) {
+						throw error("Expected (extend-enum <className> <constantName>) got (%s)", line);
+					}
+
+					visitor.visitEnumExtension(tokens.get(1), tokens.get(2), tokens.get(0).startsWith(TRANSITIVE_PREFIX));
+
+					continue;
+				}
+			}
+
 			boolean transitive = false;
 
 			if (version >= ClassTweaker.AW_V2) {
@@ -204,6 +216,9 @@ public final class ClassTweakerReaderImpl implements ClassTweakerReader {
 			switch (header[1]) {
 			case "v1":
 				version = ClassTweaker.CT_V1;
+				break;
+			case "v2":
+				version = ClassTweaker.CT_V2;
 				break;
 			default:
 				throw new ClassTweakerFormatException(

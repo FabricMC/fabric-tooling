@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import net.fabricmc.classtweaker.api.ProblemSink;
 import net.fabricmc.classtweaker.api.visitor.AccessWidenerVisitor;
 import net.fabricmc.classtweaker.api.visitor.ClassTweakerVisitor;
+import net.fabricmc.tinyremapper.api.TrClass;
 import net.fabricmc.tinyremapper.api.TrEnvironment;
 
 public class ClassTweakerValidatingVisitor implements ClassTweakerVisitor {
@@ -42,6 +43,17 @@ public class ClassTweakerValidatingVisitor implements ClassTweakerVisitor {
 	public void visitInjectedInterface(String owner, String iface, boolean transitive) {
 		if (environment.getClass(owner) == null) {
 			sink.addProblem(lineNumber, String.format("Could not find target class (%s)", owner));
+		}
+	}
+
+	@Override
+	public void visitEnumExtension(String owner, String addedConstant, boolean transitive) {
+		TrClass clazz = environment.getClass(owner);
+
+		if (clazz == null) {
+			sink.addProblem(lineNumber, String.format("Could not find target class (%s)", owner));
+		} else if (!clazz.isEnum() || !clazz.getSuperName().equals("java/lang/Enum")) {
+			sink.addProblem(lineNumber, String.format("Class (%s) is not an enum", owner));
 		}
 	}
 

@@ -74,4 +74,11 @@ public final class TransitiveOnlyFilter implements ClassTweakerVisitor {
 			delegate.visitInjectedInterface(owner, iface, transitive);
 		}
 	}
+
+	@Override
+	public void visitEnumExtension(String owner, String addedConstant, boolean transitive) {
+		if (transitive) {
+			delegate.visitEnumExtension(owner, addedConstant, transitive);
+		}
+	}
 }

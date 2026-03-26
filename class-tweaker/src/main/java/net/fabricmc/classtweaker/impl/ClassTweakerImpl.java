@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -32,10 +34,12 @@ import org.objectweb.asm.ClassVisitor;
 
 import net.fabricmc.classtweaker.api.AccessWidener;
 import net.fabricmc.classtweaker.api.ClassTweaker;
+import net.fabricmc.classtweaker.api.EnumExtension;
 import net.fabricmc.classtweaker.api.InjectedInterface;
 import net.fabricmc.classtweaker.api.visitor.AccessWidenerVisitor;
 import net.fabricmc.classtweaker.api.visitor.ClassTweakerVisitor;
 import net.fabricmc.classtweaker.classvisitor.AccessWidenerClassVisitor;
+import net.fabricmc.classtweaker.classvisitor.EnumExtensionClassVisitor;
 import net.fabricmc.classtweaker.classvisitor.InterfaceInjectionClassVisitor;
 
 public final class ClassTweakerImpl implements ClassTweaker, ClassTweakerVisitor {
@@ -44,6 +48,7 @@ public final class ClassTweakerImpl implements ClassTweaker, ClassTweakerVisitor
 	// instead of period as the package separator).
 	final Map<String, AccessWidenerImpl> accessWideners = new HashMap<>();
 	final Map<String, List<InjectedInterfaceImpl>> injectedInterfaces = new HashMap<>();
+	final Map<String, List<EnumExtensionImpl>> enumExtensions = new HashMap<>();
 	// Contains the class-names that are affected by loaded tweakers.
 	// Names are period-separated binary names (i.e. a.b.C).
 	final Set<String> targetClasses = new LinkedHashSet<>();
@@ -80,6 +85,15 @@ public final class ClassTweakerImpl implements ClassTweaker, ClassTweakerVisitor
 		addTargets(owner);
 	}
 
+	@Override
+	public void visitEnumExtension(String owner, String addedConstant, boolean transitive) {
+		final List<EnumExtensionImpl> enumExtensions = this.enumExtensions.computeIfAbsent(owner, s -> new ArrayList<>());
+		final EnumExtensionImpl enumExtension = new EnumExtensionImpl(addedConstant);
+
+		enumExtensions.add(enumExtension);
+		addTargets(owner);
+	}
+
 	private void addTargets(String clazz) {
 		classes.add(clazz);
 		targetClasses.add(clazz);
@@ -99,6 +113,10 @@ public final class ClassTweakerImpl implements ClassTweaker, ClassTweakerVisitor
 
 		if (!injectedInterfaces.isEmpty()) {
 			classVisitor = new InterfaceInjectionClassVisitor(api, classVisitor, this);
+		}
+
+		if (!enumExtensions.isEmpty()) {
+			classVisitor = new EnumExtensionClassVisitor(api, classVisitor, this);
 		}
 
 		return classVisitor;
@@ -138,8 +156,17 @@ public final class ClassTweakerImpl implements ClassTweaker, ClassTweakerVisitor
 
 	@Override
 	public Map<String, List<InjectedInterface>> getAllInjectedInterfaces() {
-		//noinspection unchecked
-		return Collections.unmodifiableMap((Map) injectedInterfaces);
+		return mapValues(injectedInterfaces, Collections::unmodifiableList);
+	}
+
+	@Override
+	public List<EnumExtension> getEnumExtensions(String className) {
+		return Collections.unmodifiableList(enumExtensions.getOrDefault(className, Collections.emptyList()));
+	}
+
+	@Override
+	public Map<String, List<EnumExtension>> getAllEnumExtensions() {
+		return mapValues(enumExtensions, Collections::unmodifiableList);
 	}
 
 	@Override
@@ -150,5 +177,15 @@ public final class ClassTweakerImpl implements ClassTweaker, ClassTweakerVisitor
 	@Override
 	public int hashCode() {
 		return Objects.hash(namespace, accessWideners, targetClasses, classes);
+	}
+
+	private static <K, V1, V2> Map<K, V2> mapValues(Map<K, V1> map, Function<V1, V2> function) {
+		return map.entrySet().stream()
+				.collect(
+						Collectors.toMap(
+								Map.Entry::getKey,
+								entry -> function.apply(entry.getValue())
+						)
+				);
 	}
 }

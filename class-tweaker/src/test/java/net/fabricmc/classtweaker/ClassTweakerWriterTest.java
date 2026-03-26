@@ -72,6 +72,16 @@ class ClassTweakerWriterTest {
 	}
 
 	@Test
+	void testWriteWidenerV4() throws Exception {
+		String expectedContent = readReferenceContent("AccessWidenerWriterTest_v4.txt");
+
+		ClassTweakerWriter writer = ClassTweakerWriter.create(ClassTweaker.CT_V2);
+		accept(writer, 4);
+
+		assertEquals(expectedContent, writer.getOutputAsString());
+	}
+
+	@Test
 	void testCanMergeMultipleRunsIntoOneFile() {
 		ClassTweakerWriter writer = ClassTweakerWriter.create(ClassTweaker.AW_V2);
 		writer.visitHeader("ns1");
@@ -140,6 +150,11 @@ class ClassTweakerWriterTest {
 		if (version >= 3) {
 			visitor.visitInjectedInterface("test/FinalClass", "test/InterfaceTests", false);
 			visitor.visitInjectedInterface("test/FinalClass", "test/InterfaceTests", true);
+		}
+
+		if (version >= 4) {
+			visitor.visitEnumExtension("test/EnumTests", "CONSTANT3", false);
+			visitor.visitEnumExtension("test/EnumTests", "CONSTANT4", true);
 		}
 	}
 }
