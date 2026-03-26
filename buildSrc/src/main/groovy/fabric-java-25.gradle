@@ -1,4 +1,4 @@
-// Configure the project to target Java 21
+// Configure the project to target Java 25
 
 tasks.withType(JavaCompile).configureEach {
 	it.options.encoding = "UTF-8"
