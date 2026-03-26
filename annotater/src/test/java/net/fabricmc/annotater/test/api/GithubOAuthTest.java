@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 import com.auth0.jwt.JWT;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.javalin.http.HttpStatus;
@@ -281,6 +282,207 @@ public class GithubOAuthTest extends AbstractApiTest {
 			.withJWTId(UUID.randomUUID().toString())
 			.withClaim("plt", "github")
 			.sign(config.jwt().algorithm());
+	}
+
+	@Test
+	void permissionGroupUserNotInAnyTeam() throws Exception {
+		// Setup: User is not in any team (default mock behavior returns false)
+		long userId = 12345L;
+		String testCode = "test_code_user";
+		String testAccessToken = "gho_token_user";
+		GithubAPI.GithubUser testUser = new GithubAPI.GithubUser(userId, "Regular User", "regularuser");
+
+		Mockito.when(mockGithubApi.accessToken(anyString(), anyString(), eq(testCode), anyString()))
+				.thenReturn(testAccessToken);
+		Mockito.when(mockGithubApi.getUser(testAccessToken))
+				.thenReturn(testUser);
+
+		String state = generateValidState();
+
+		// Get refresh token via landing
+		Response landingResponse = client.get("/v1/auth/github/landing?code=" + testCode + "&state=" + state);
+		assertStatus(HttpStatus.FOUND, landingResponse);
+
+		String setCookie = landingResponse.header("Set-Cookie");
+		assertNotNull(setCookie);
+		String refreshToken = extractCookieValue(setCookie, "refreshToken");
+
+		// Use refresh token to get access token
+		Response refreshResponse = client.post("/v1/auth/refresh", null, builder -> {
+			builder.addHeader("Cookie", "refreshToken=" + refreshToken);
+		});
+
+		assertStatus(HttpStatus.OK, refreshResponse);
+
+		String body = refreshResponse.body().string();
+		JsonObject json = JsonParser.parseString(body).getAsJsonObject();
+		String accessToken = json.get("accessToken").getAsString();
+
+		// Decode and verify the access token has USER role
+		DecodedJWT decoded = JWT.decode(accessToken);
+		assertEquals("user", decoded.getClaim("role").asString(), "User not in any team should have USER role");
+	}
+
+	@Test
+	void permissionGroupUserInTrustedTeamOnly() throws Exception {
+		// Setup: User is in trusted team but not admin team
+		long userId = 23456L;
+		String testCode = "test_code_trusted";
+		String testAccessToken = "gho_token_trusted";
+		GithubAPI.GithubUser testUser = new GithubAPI.GithubUser(userId, "Trusted User", "trusteduser");
+
+		Mockito.when(mockGithubApi.accessToken(anyString(), anyString(), eq(testCode), anyString()))
+				.thenReturn(testAccessToken);
+		Mockito.when(mockGithubApi.getUser(testAccessToken))
+				.thenReturn(testUser);
+		Mockito.when(mockGithubApi.isTeamMember(eq("test-org"), eq("admin-team"), eq(userId)))
+				.thenReturn(false);
+		Mockito.when(mockGithubApi.isTeamMember(eq("test-org"), eq("trusted-team"), eq(userId)))
+				.thenReturn(true);
+
+		String state = generateValidState();
+
+		// Get refresh token via landing
+		Response landingResponse = client.get("/v1/auth/github/landing?code=" + testCode + "&state=" + state);
+		assertStatus(HttpStatus.FOUND, landingResponse);
+
+		String setCookie = landingResponse.header("Set-Cookie");
+		assertNotNull(setCookie);
+		String refreshToken = extractCookieValue(setCookie, "refreshToken");
+
+		// Use refresh token to get access token
+		Response refreshResponse = client.post("/v1/auth/refresh", null, builder -> {
+			builder.addHeader("Cookie", "refreshToken=" + refreshToken);
+		});
+
+		assertStatus(HttpStatus.OK, refreshResponse);
+
+		String body = refreshResponse.body().string();
+		JsonObject json = JsonParser.parseString(body).getAsJsonObject();
+		String accessToken = json.get("accessToken").getAsString();
+
+		// Decode and verify the access token has TRUSTED role
+		DecodedJWT decoded = JWT.decode(accessToken);
+		assertEquals("trusted", decoded.getClaim("role").asString(), "User in trusted team should have TRUSTED role");
+	}
+
+	@Test
+	void permissionGroupUserInAdminTeamOnly() throws Exception {
+		// Setup: User is in admin team but not trusted team
+		long userId = 34567L;
+		String testCode = "test_code_admin";
+		String testAccessToken = "gho_token_admin";
+		GithubAPI.GithubUser testUser = new GithubAPI.GithubUser(userId, "Admin User", "adminuser");
+
+		Mockito.when(mockGithubApi.accessToken(anyString(), anyString(), eq(testCode), anyString()))
+				.thenReturn(testAccessToken);
+		Mockito.when(mockGithubApi.getUser(testAccessToken))
+				.thenReturn(testUser);
+		Mockito.when(mockGithubApi.isTeamMember(eq("test-org"), eq("admin-team"), eq(userId)))
+				.thenReturn(true);
+		Mockito.when(mockGithubApi.isTeamMember(eq("test-org"), eq("trusted-team"), eq(userId)))
+				.thenReturn(false);
+
+		String state = generateValidState();
+
+		// Get refresh token via landing
+		Response landingResponse = client.get("/v1/auth/github/landing?code=" + testCode + "&state=" + state);
+		assertStatus(HttpStatus.FOUND, landingResponse);
+
+		String setCookie = landingResponse.header("Set-Cookie");
+		assertNotNull(setCookie);
+		String refreshToken = extractCookieValue(setCookie, "refreshToken");
+
+		// Use refresh token to get access token
+		Response refreshResponse = client.post("/v1/auth/refresh", null, builder -> {
+			builder.addHeader("Cookie", "refreshToken=" + refreshToken);
+		});
+
+		assertStatus(HttpStatus.OK, refreshResponse);
+
+		String body = refreshResponse.body().string();
+		JsonObject json = JsonParser.parseString(body).getAsJsonObject();
+		String accessToken = json.get("accessToken").getAsString();
+
+		// Decode and verify the access token has ADMIN role
+		DecodedJWT decoded = JWT.decode(accessToken);
+		assertEquals("admin", decoded.getClaim("role").asString(), "User in admin team should have ADMIN role");
+	}
+
+	@Test
+	void permissionGroupUserInBothTeams() throws Exception {
+		// Setup: User is in both admin and trusted teams - admin should take precedence
+		long userId = 45678L;
+		String testCode = "test_code_both";
+		String testAccessToken = "gho_token_both";
+		GithubAPI.GithubUser testUser = new GithubAPI.GithubUser(userId, "Super User", "superuser");
+
+		Mockito.when(mockGithubApi.accessToken(anyString(), anyString(), eq(testCode), anyString()))
+				.thenReturn(testAccessToken);
+		Mockito.when(mockGithubApi.getUser(testAccessToken))
+				.thenReturn(testUser);
+		Mockito.when(mockGithubApi.isTeamMember(eq("test-org"), eq("admin-team"), eq(userId)))
+				.thenReturn(true);
+		Mockito.when(mockGithubApi.isTeamMember(eq("test-org"), eq("trusted-team"), eq(userId)))
+				.thenReturn(true);
+
+		String state = generateValidState();
+
+		// Get refresh token via landing
+		Response landingResponse = client.get("/v1/auth/github/landing?code=" + testCode + "&state=" + state);
+		assertStatus(HttpStatus.FOUND, landingResponse);
+
+		String setCookie = landingResponse.header("Set-Cookie");
+		assertNotNull(setCookie);
+		String refreshToken = extractCookieValue(setCookie, "refreshToken");
+
+		// Use refresh token to get access token
+		Response refreshResponse = client.post("/v1/auth/refresh", null, builder -> {
+			builder.addHeader("Cookie", "refreshToken=" + refreshToken);
+		});
+
+		assertStatus(HttpStatus.OK, refreshResponse);
+
+		String body = refreshResponse.body().string();
+		JsonObject json = JsonParser.parseString(body).getAsJsonObject();
+		String accessToken = json.get("accessToken").getAsString();
+
+		// Decode and verify the access token has ADMIN role (takes precedence)
+		DecodedJWT decoded = JWT.decode(accessToken);
+		assertEquals("admin", decoded.getClaim("role").asString(), "User in both teams should have ADMIN role (takes precedence)");
+	}
+
+	@Test
+	void permissionGroupTeamMembershipCheckFailure() throws Exception {
+		// Setup: Team membership check throws IOException
+		long userId = 56789L;
+		String testCode = "test_code_error";
+		String testAccessToken = "gho_token_error";
+		GithubAPI.GithubUser testUser = new GithubAPI.GithubUser(userId, "Error User", "erroruser");
+
+		Mockito.when(mockGithubApi.accessToken(anyString(), anyString(), eq(testCode), anyString()))
+				.thenReturn(testAccessToken);
+		Mockito.when(mockGithubApi.getUser(testAccessToken))
+				.thenReturn(testUser);
+		Mockito.when(mockGithubApi.isTeamMember(anyString(), anyString(), eq(userId)))
+				.thenThrow(new IOException("GitHub team API error"));
+
+		String state = generateValidState();
+
+		// Get refresh token via landing
+		Response landingResponse = client.get("/v1/auth/github/landing?code=" + testCode + "&state=" + state);
+		assertStatus(HttpStatus.FOUND, landingResponse);
+
+		String setCookie = landingResponse.header("Set-Cookie");
+		assertNotNull(setCookie);
+		String refreshToken = extractCookieValue(setCookie, "refreshToken");
+
+		// Use refresh token to get access token - should fail with 500
+		Response refreshResponse = client.post("/v1/auth/refresh", null, builder -> {
+			builder.addHeader("Cookie", "refreshToken=" + refreshToken);
+		});
+
+		assertStatus(HttpStatus.INTERNAL_SERVER_ERROR, refreshResponse);
 	}
 
 	private String extractParameter(String url, String paramName) {

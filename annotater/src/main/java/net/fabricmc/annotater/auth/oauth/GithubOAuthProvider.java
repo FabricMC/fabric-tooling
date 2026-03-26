@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import net.fabricmc.annotater.Config;
 import net.fabricmc.annotater.auth.AuthPlatform;
+import net.fabricmc.annotater.auth.PermissionGroup;
 import net.fabricmc.annotater.auth.RefreshToken;
 import net.fabricmc.annotater.thirdparty.GithubAPI;
 
@@ -70,5 +71,34 @@ public class GithubOAuthProvider extends OAuthProvider {
 
 		LOGGER.info("Verified GitHub user: {} (ID: {})", githubUser.login(), githubUser.id());
 		return new RefreshToken.User(githubUser.id(), githubUser.login());
+	}
+
+	@Override
+	public PermissionGroup getPermissionGroup(RefreshToken refreshToken) {
+		if (refreshToken.platform() != AuthPlatform.GITHUB) {
+			throw new IllegalArgumentException("Invalid platform for GitHub OAuth provider");
+		}
+
+		long userId = refreshToken.user().id();
+
+		try {
+			Config.Team adminTeam = githubOAuth.adminTeam();
+			Config.Team trustedTeam = githubOAuth.trustedTeam();
+
+			if (githubAPI.isTeamMember(adminTeam.org(), adminTeam.teamSlug(), userId)) {
+				LOGGER.info("User ID {} is member of admin team {}/{}", userId, adminTeam.org(), adminTeam.teamSlug());
+				return PermissionGroup.ADMIN;
+			}
+
+			if (githubAPI.isTeamMember(trustedTeam.org(), trustedTeam.teamSlug(), userId)) {
+				LOGGER.info("User ID {} is member of trusted team {}/{}", userId, trustedTeam.org(), trustedTeam.teamSlug());
+				return PermissionGroup.TRUSTED;
+			}
+		} catch (IOException e) {
+			LOGGER.error("Failed to check GitHub team membership for user ID {}", userId, e);
+			throw new InternalServerErrorResponse("Failed to determine user permissions");
+		}
+
+		return PermissionGroup.USER;
 	}
 }

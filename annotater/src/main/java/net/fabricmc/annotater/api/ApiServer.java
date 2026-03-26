@@ -6,6 +6,7 @@ import static io.javalin.apibuilder.ApiBuilder.path;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.util.Map;
 
 import io.javalin.Javalin;
 import io.javalin.http.ContentType;
@@ -16,9 +17,11 @@ import net.fabricmc.annotater.Config;
 import net.fabricmc.annotater.api.v1.AuthApi;
 import net.fabricmc.annotater.api.v1.JavadocApi;
 import net.fabricmc.annotater.api.v1.RoleAuthenticationHandler;
+import net.fabricmc.annotater.auth.AuthPlatform;
 import net.fabricmc.annotater.auth.impl.AccessTokenControllerImpl;
 import net.fabricmc.annotater.auth.impl.RefreshTokenControllerImpl;
 import net.fabricmc.annotater.auth.oauth.GithubOAuthProvider;
+import net.fabricmc.annotater.auth.oauth.OAuthProvider;
 import net.fabricmc.annotater.database.InMemoryJavadocDatabase;
 import net.fabricmc.annotater.database.JavadocDatabase;
 import net.fabricmc.annotater.thirdparty.ExternalApis;
@@ -29,8 +32,11 @@ public class ApiServer {
 
 	public ApiServer(Config appConfig, ExternalApis externalApis) {
 		var refreshTokenController = new RefreshTokenControllerImpl(appConfig);
-		var accessTokenController = new AccessTokenControllerImpl(appConfig);
 		var githubOAuthProvider = new GithubOAuthProvider(appConfig, externalApis.github());
+		Map<AuthPlatform, OAuthProvider> oAuthProviders = Map.of(
+				AuthPlatform.GITHUB, githubOAuthProvider
+		);
+		var accessTokenController = new AccessTokenControllerImpl(appConfig, oAuthProviders);
 		var roleAuthenticationHandler = new RoleAuthenticationHandler(refreshTokenController, accessTokenController);
 		var authApi = new AuthApi(appConfig, accessTokenController, refreshTokenController, githubOAuthProvider);
 		this.javadocDatabase = new InMemoryJavadocDatabase();

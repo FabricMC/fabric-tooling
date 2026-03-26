@@ -2,6 +2,7 @@ package net.fabricmc.annotater.auth.impl;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 
 import com.auth0.jwt.JWT;
@@ -16,16 +17,26 @@ import io.javalin.http.UnauthorizedResponse;
 import net.fabricmc.annotater.Config;
 import net.fabricmc.annotater.auth.AccessToken;
 import net.fabricmc.annotater.auth.AccessTokenController;
+import net.fabricmc.annotater.auth.AuthPlatform;
 import net.fabricmc.annotater.auth.PermissionGroup;
 import net.fabricmc.annotater.auth.RefreshToken;
+import net.fabricmc.annotater.auth.oauth.OAuthProvider;
 
-public record AccessTokenControllerImpl(Config config) implements AccessTokenController {
+public record AccessTokenControllerImpl(
+		Config config,
+		Map<AuthPlatform, OAuthProvider> oAuthProviders
+) implements AccessTokenController {
 	private static final Duration ACCESS_TOKEN_DURATION = Duration.ofMinutes(5);
 
 	@Override
 	public String newAccessToken(RefreshToken refreshToken) {
-		// TODO figure out a way to trust/admin users
-		PermissionGroup permissionGroup = PermissionGroup.USER;
+		OAuthProvider oAuthProvider = oAuthProviders.get(refreshToken.platform());
+
+		if (oAuthProvider == null) {
+			throw new UnauthorizedResponse("Unsupported authentication platform: " + refreshToken.platform());
+		}
+
+		PermissionGroup permissionGroup = oAuthProvider.getPermissionGroup(refreshToken);
 
 		AccessToken accessToken = new AccessToken(
 				UUID.randomUUID(),

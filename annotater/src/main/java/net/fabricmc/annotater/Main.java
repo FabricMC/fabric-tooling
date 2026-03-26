@@ -12,7 +12,7 @@ public class Main {
 	public static void main(String[] args) throws IOException {
 		Config config = Config.parse(Files.readString(Path.of("config.json")));
 
-		ExternalApis externalApis = new ExternalApis(new GithubAPIImpl());
+		ExternalApis externalApis = new ExternalApis(new GithubAPIImpl(config.githubOAuth().apiToken()));
 		var apiServer = new ApiServer(config, externalApis);
 		apiServer.run();
 	}

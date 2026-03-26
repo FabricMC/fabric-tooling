@@ -48,8 +48,19 @@ public record Config(
 		String clientSecret();
 	}
 
+	public record Team(
+			String org,
+			String teamSlug
+	) { }
+
 	public record GithubOAuth(
 			String clientID,
-			String clientSecret
+			String clientSecret,
+			// GitHub API token with read:org scope for checking team membership
+			String apiToken,
+			// Team for trusted users
+			Team trustedTeam,
+			// Team for admin users
+			Team adminTeam
 	) implements OAuth { }
 }
