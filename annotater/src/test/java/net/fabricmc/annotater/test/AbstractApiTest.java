@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.PEMEncoder;
 import java.security.spec.ECGenParameterSpec;
 import java.time.Duration;
 import java.time.Instant;
@@ -125,11 +126,11 @@ public abstract class AbstractApiTest {
 		kpg.initialize(new ECGenParameterSpec("secp384r1"));
 		KeyPair keyPair = kpg.generateKeyPair();
 
-		byte[] privateDer = keyPair.getPrivate().getEncoded();
-		Path privateKey = Files.write(tempDir.resolve("private_key.der"), privateDer);
+		byte[] privatePem = PEMEncoder.of().encode(keyPair.getPrivate());
+		Path privateKey = Files.write(tempDir.resolve("private_key.pem"), privatePem);
 
-		byte[] publicDer = keyPair.getPublic().getEncoded();
-		Path publicKey = Files.write(tempDir.resolve("public_key.der"), publicDer);
+		byte[] publicPem = PEMEncoder.of().encode(keyPair.getPublic());
+		Path publicKey = Files.write(tempDir.resolve("public_key.pub"), publicPem);
 
 		return new KeyPairPath(publicKey, privateKey);
 	}
