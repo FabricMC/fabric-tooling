@@ -24,7 +24,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: 'microsoft'
-          java-version: '21'
+          java-version: '25'
       - uses: actions/checkout@v4
       - run: ./gradlew ":$PROJECT:build" ":$PROJECT:publish" --stacktrace --warning-mode=fail
         env:
@@ -40,7 +40,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: 'microsoft'
-          java-version: '21'
+          java-version: '25'
       - uses: actions/checkout@v4
       - run: ./gradlew ":$PROJECT:build" ":$PROJECT:publish" --stacktrace --warning-mode=fail
         env:
