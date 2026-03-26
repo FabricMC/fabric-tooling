@@ -16,6 +16,7 @@
 
 package net.fabricmc.classtweaker.classvisitor;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -25,8 +26,11 @@ import org.objectweb.asm.ByteVector;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.FieldNode;
+import org.objectweb.asm.tree.MethodNode;
 
 import net.fabricmc.classtweaker.api.ClassTweaker;
 import net.fabricmc.classtweaker.api.EnumExtension;
@@ -34,6 +38,8 @@ import net.fabricmc.classtweaker.api.EnumExtension;
 public class EnumExtensionClassVisitor extends ClassVisitor {
 	private final ClassTweaker classTweaker;
 	private final Set<String> addedConstants = new LinkedHashSet<>();
+	private final List<FieldNode> existingConstants = new ArrayList<>();
+	private final List<Runnable> postVisitTasks = new ArrayList<>();
 	private Type currentType;
 
 	public EnumExtensionClassVisitor(int api, ClassVisitor classVisitor, ClassTweaker classTweaker) {
@@ -60,16 +66,45 @@ public class EnumExtensionClassVisitor extends ClassVisitor {
 
 	@Override
 	public FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
-		if (currentType.getDescriptor().equals(descriptor) && (access & Opcodes.ACC_ENUM) != 0) {
-			// Existing enum constant in the class
+		if (currentType.getDescriptor().equals(descriptor)) {
+			// Can't add a conflicting constant
 			addedConstants.remove(name);
 		}
 
-		return super.visitField(access, name, descriptor, signature, value);
+		FieldNode node = new FieldNode(access, name, descriptor, signature, value);
+
+		if ((access & Opcodes.ACC_ENUM) != 0) {
+			// Existing enum constant in the class
+			existingConstants.add(node);
+		} else {
+			// Delay the field until after our added constants
+			postVisitTasks.add(() -> node.accept(cv));
+		}
+
+		return node;
+	}
+
+	@Override
+	public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+		MethodNode node = new MethodNode(access, name, descriptor, signature, exceptions);
+		// Delay the method until after our added constants
+		postVisitTasks.add(() -> node.accept(cv));
+		return node;
 	}
 
 	@Override
 	public void visitEnd() {
+		if (cv == null) {
+			// Nothing to do
+			return;
+		}
+
+		// Preserve the existing constants first
+		for (FieldNode existingConstant : existingConstants) {
+			existingConstant.accept(cv);
+		}
+
+		// Then add our constants
 		for (String addedConstant : addedConstants) {
 			FieldVisitor visitor = super.visitField(
 					Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_STATIC | Opcodes.ACC_ENUM,
@@ -80,6 +115,11 @@ public class EnumExtensionClassVisitor extends ClassVisitor {
 			);
 			visitor.visitAttribute(new StubEnumConstantAttribute());
 			visitor.visitEnd();
+		}
+
+		// Then add the remaining methods/fields
+		for (Runnable task : postVisitTasks) {
+			task.run();
 		}
 
 		super.visitEnd();
