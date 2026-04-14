@@ -120,6 +120,10 @@ public final class ClassTweakerReaderImpl implements ClassTweakerReader {
 			String firstToken = tokens.get(0);
 
 			if (firstToken.endsWith("(")) {
+				if (version < ClassTweaker.CT_V3) {
+					throw error("Multiline directives require classTweaker v3+");
+				}
+
 				firstToken = firstToken.substring(0, firstToken.length() - 1);
 				tokens.set(0, firstToken);
 
@@ -138,7 +142,7 @@ public final class ClassTweakerReaderImpl implements ClassTweakerReader {
 
 					if (closeIndex != -1) {
 						if (closeIndex != continueTokens.size() - 1) {
-							throw error("Unexpected token after multiline command");
+							throw error("Unexpected token after end of multiline directive");
 						}
 
 						tokens.addAll(continueTokens.subList(0, closeIndex));
@@ -148,7 +152,7 @@ public final class ClassTweakerReaderImpl implements ClassTweakerReader {
 					tokens.addAll(continueTokens);
 				}
 
-				if (continueLine == null) throw error("Unterminated multiline command");
+				if (continueLine == null) throw error("Unterminated multiline directive");
 			}
 
 			if (version >= ClassTweaker.CT_V1) {

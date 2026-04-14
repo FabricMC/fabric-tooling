@@ -36,7 +36,8 @@ public interface ClassTweaker extends ClassTweakerVisitor {
 	// Class tweaker format versions.
 	int CT_V1 = 3;
 	int CT_V2 = 4;
-	int CT_LATEST = CT_V2;
+	int CT_V3 = 5;
+	int CT_LATEST = CT_V3;
 
 	/**
 	 * @return a new {@link ClassTweaker} instance.
