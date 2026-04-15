@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -114,9 +115,45 @@ public final class ClassTweakerReaderImpl implements ClassTweakerReader {
 			}
 
 			// Note that this trims trailing spaces. See the docs of split for details.
-			List<String> tokens = Arrays.asList(delimiter.split(line));
+			List<String> tokens = new ArrayList<>(Arrays.asList(delimiter.split(line)));
 
 			String firstToken = tokens.get(0);
+
+			if (firstToken.endsWith("(")) {
+				if (version < ClassTweaker.CT_V3) {
+					throw error("Multiline directives require classTweaker v3+");
+				}
+
+				firstToken = firstToken.substring(0, firstToken.length() - 1);
+				tokens.set(0, firstToken);
+
+				String continueLine;
+				List<String> continueTokens;
+
+				while ((continueLine = reader.readLine()) != null) {
+					lineNumber++;
+					visitor.visitLineNumber(lineNumber);
+					continueLine = handleComment(version, continueLine).trim();
+
+					if (continueLine.isEmpty()) continue;
+
+					continueTokens = Arrays.asList(delimiter.split(continueLine));
+					int closeIndex = continueTokens.indexOf(")");
+
+					if (closeIndex != -1) {
+						if (closeIndex != continueTokens.size() - 1) {
+							throw error("Unexpected token after end of multiline directive");
+						}
+
+						tokens.addAll(continueTokens.subList(0, closeIndex));
+						break;
+					}
+
+					tokens.addAll(continueTokens);
+				}
+
+				if (continueLine == null) throw error("Unterminated multiline directive");
+			}
 
 			if (version >= ClassTweaker.CT_V1) {
 				if (("inject-interface".equals(firstToken) || (TRANSITIVE_PREFIX + "inject-interface").equals(firstToken))) {
