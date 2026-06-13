@@ -17,5 +17,8 @@
       "org": "test-org",
       "teamSlug": "admin-team"
     }
+  },
+  "javadoc": {
+    "repo": "%javadoc_repo%"
   }
 }

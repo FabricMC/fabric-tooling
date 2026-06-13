@@ -42,8 +42,10 @@ public abstract class AbstractApiTest {
 	private static Path tempDir;
 
 	protected static Config config;
+	private static KeyPairPath keyPair;
 
 	protected GithubAPI mockGithubApi;
+	protected Path javadocRepo;
 
 	protected ApiServer server;
 	protected Javalin app;
@@ -51,15 +53,20 @@ public abstract class AbstractApiTest {
 
 	@BeforeAll
 	static void setUpClass() throws Exception {
-		KeyPairPath keyPair = generateJWTKeyPair();
-		String str = readResource("config.json")
-				.replace("%private_key%", keyPair.privateKey.toString().replace("\\", "\\\\"))
-				.replace("%public_key%", keyPair.publicKey.toString()).replace("\\", "\\\\");
-		config = Config.parse(str);
+		keyPair = generateJWTKeyPair();
 	}
 
 	@BeforeEach
 	void setUp() throws Exception {
+		javadocRepo = Files.createTempDirectory(tempDir, "javadocs");
+		runGit(javadocRepo, "init");
+
+		String str = readResource("config.json")
+				.replace("%private_key%", keyPair.privateKey.toString().replace("\\", "\\\\"))
+				.replace("%public_key%", keyPair.publicKey.toString().replace("\\", "\\\\"))
+				.replace("%javadoc_repo%", javadocRepo.toString().replace("\\", "\\\\"));
+		config = Config.parse(str);
+
 		mockGithubApi = Mockito.mock(GithubAPI.class);
 		// Mock team membership checks to return false by default (user is not in any team)
 		Mockito.when(mockGithubApi.isTeamMember(Mockito.anyString(), Mockito.anyString(), Mockito.anyLong()))
@@ -101,6 +108,34 @@ public abstract class AbstractApiTest {
 
 	protected void assertStatus(HttpStatus status, Response response) {
 		Assertions.assertEquals(status.getCode(), response.code(), "Expected HTTP status " + status + " but got " + HttpStatus.forStatus(response.code()));
+	}
+
+	protected static void runGit(Path repository, String... args) throws IOException {
+		ProcessBuilder processBuilder = new ProcessBuilder();
+		processBuilder.command("git");
+
+		for (String arg : args) {
+			processBuilder.command().add(arg);
+		}
+
+		processBuilder.directory(repository.toFile());
+
+		try {
+			Process process = processBuilder.start();
+			String stdout = new String(process.getInputStream().readAllBytes());
+			String stderr = new String(process.getErrorStream().readAllBytes());
+			int exitCode = process.waitFor();
+
+			if (exitCode != 0) {
+				throw new IOException("Git command failed with exit code " + exitCode
+						+ ": git " + String.join(" ", args)
+						+ "\nstdout:\n" + stdout
+						+ "\nstderr:\n" + stderr);
+			}
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new IOException("Interrupted while running git " + String.join(" ", args), e);
+		}
 	}
 
 	protected String extractCookieValue(String setCookie, String cookieName) {

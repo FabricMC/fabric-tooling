@@ -18,7 +18,8 @@ public record Config(
 		// The base url of this API. e.g "https://api.example.com"
 		String apiUrl,
 		Jwt jwt,
-		GithubOAuth githubOAuth
+		GithubOAuth githubOAuth,
+		Javadoc javadoc
 ) {
 	private static final Gson GSON = new GsonBuilder().registerTypeAdapter(Jwt.class, new Jwt.JwtDeserializer()).create();
 
@@ -63,4 +64,9 @@ public record Config(
 			// Team for admin users
 			Team adminTeam
 	) implements OAuth { }
+
+	public record Javadoc(
+			// Path to an existing local Git repository containing Enigma mapping files.
+			String repo
+	) { }
 }
