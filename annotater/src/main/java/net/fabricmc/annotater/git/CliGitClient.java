@@ -11,7 +11,7 @@ public final class CliGitClient implements GitClient {
 	private final Path repository;
 
 	public CliGitClient(Path repository) {
-		this.repository = repository;
+		this.repository = repository.toAbsolutePath().normalize();
 	}
 
 	@Override
@@ -21,17 +21,17 @@ public final class CliGitClient implements GitClient {
 		}
 
 		CommandResult result = runAllowingFailure("rev-parse", "--is-inside-work-tree");
-		return result.exitCode() == 0 && result.stdout().trim().equals("true");
+		return result.exitCode() == 0 && result.output().trim().equals("true");
 	}
 
 	@Override
-	public void addAll() throws IOException {
-		run("add", "-A");
+	public void addAll(Path path) throws IOException {
+		run("add", "-A", "--", repository.relativize(path).toString());
 	}
 
 	@Override
-	public boolean hasStagedChanges() throws IOException {
-		CommandResult result = runAllowingFailure("diff", "--cached", "--quiet");
+	public boolean hasStagedChanges(Path path) throws IOException {
+		CommandResult result = runAllowingFailure("diff", "--cached", "--quiet", "--", repository.relativize(path).toString());
 
 		if (result.exitCode() == 0) {
 			return false;
@@ -71,14 +71,14 @@ public final class CliGitClient implements GitClient {
 
 		ProcessBuilder processBuilder = new ProcessBuilder(command);
 		processBuilder.directory(repository.toFile());
+		processBuilder.redirectErrorStream(true);
 
 		try {
 			Process process = processBuilder.start();
-			byte[] stdout = process.getInputStream().readAllBytes();
-			byte[] stderr = process.getErrorStream().readAllBytes();
+			byte[] output = process.getInputStream().readAllBytes();
 			int exitCode = process.waitFor();
 
-			return new CommandResult(exitCode, new String(stdout, StandardCharsets.UTF_8), new String(stderr, StandardCharsets.UTF_8));
+			return new CommandResult(exitCode, new String(output, StandardCharsets.UTF_8));
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 			throw new IOException("Interrupted while running " + String.join(" ", command), e);
@@ -88,9 +88,8 @@ public final class CliGitClient implements GitClient {
 	private static IOException commandFailed(CommandResult result, String... args) {
 		return new IOException("Git command failed with exit code " + result.exitCode()
 				+ ": git " + String.join(" ", args)
-				+ "\nstdout:\n" + result.stdout()
-				+ "\nstderr:\n" + result.stderr());
+				+ "\noutput:\n" + result.output());
 	}
 
-	private record CommandResult(int exitCode, String stdout, String stderr) { }
+	private record CommandResult(int exitCode, String output) { }
 }

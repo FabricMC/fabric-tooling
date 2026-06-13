@@ -154,9 +154,9 @@ public final class GitJavadocDatabase implements JavadocDatabase {
 		try {
 			update.run();
 			writeMappings();
-			gitClient.addAll();
+			gitClient.addAll(mappings);
 
-			if (gitClient.hasStagedChanges()) {
+			if (gitClient.hasStagedChanges(mappings)) {
 				gitClient.commit("Update javadocs for " + className, AUTHOR_NAME, AUTHOR_EMAIL);
 			}
 		} catch (IOException e) {

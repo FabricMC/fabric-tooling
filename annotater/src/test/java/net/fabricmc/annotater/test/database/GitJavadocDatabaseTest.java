@@ -87,6 +87,17 @@ public class GitJavadocDatabaseTest {
 	}
 
 	@Test
+	void updateDoesNotCommitUnrelatedRepoFiles() throws IOException {
+		Files.writeString(repository.resolve("notes.txt"), "not part of the javadoc database");
+
+		GitJavadocDatabase database = new GitJavadocDatabase(repository);
+		database.setClassJavadoc("net/minecraft/test/TestClass", "Class docs");
+
+		assertEquals("1", gitOutput(repository, "rev-list", "--count", "--all").trim());
+		assertEquals("?? notes.txt", gitOutput(repository, "status", "--short", "--", "notes.txt").trim());
+	}
+
+	@Test
 	void innerClassUsesOuterClassMappingFile() throws IOException {
 		GitJavadocDatabase database = new GitJavadocDatabase(repository);
 		database.setClassJavadoc("net/minecraft/client/Minecraft$Inner", "Inner docs");
