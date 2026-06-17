@@ -85,6 +85,16 @@ public class ClassTweakerReaderTest {
 			assertEquals(3, readVersion("classTweaker v1 junk"));
 		}
 
+		@Test
+		public void readVersion4() {
+			assertEquals(4, readVersion("classTweaker v2 junk"));
+		}
+
+		@Test
+		public void readVersion5() {
+			assertEquals(5, readVersion("classTweaker v3 junk"));
+		}
+
 		private int readVersion(String headerLine) {
 			return ClassTweakerReader.readVersion(headerLine.getBytes(StandardCharsets.UTF_8));
 		}
@@ -557,6 +567,52 @@ public class ClassTweakerReaderTest {
 			parse(testInput);
 
 			assertThat(visitor.getTargets()).hasSize(1);
+		}
+	}
+
+	/**
+	 * Tests parsing multiline directives introduced in the V3 format.
+	 */
+	@Nested
+	class V5Parsing {
+		private void parseLines(String line) throws IOException {
+			parse("classTweaker v3 namespace\n" + line);
+		}
+
+		@Test
+		public void closingParenOnOwnLine() throws IOException {
+			parseLines("accessible(\n  class\n  SomeClass\n)");
+			assertThat(visitor.getTargets()).containsOnly("SomeClass");
+		}
+
+		@Test
+		public void closingParenOnArgumentLine() throws IOException {
+			parseLines("accessible(\n  class\n  SomeClass )");
+			assertThat(visitor.getTargets()).containsOnly("SomeClass");
+		}
+
+		@Test
+		public void unterminatedMultilineThrows() {
+			assertFormatError(
+					"Unterminated multiline directive",
+					() -> parseLines("accessible(\n  class\n  SomeClass")
+			);
+		}
+
+		@Test
+		public void unexpectedTokenAfterClosingParenThrows() {
+			assertFormatError(
+					"Unexpected token after end of multiline directive",
+					() -> parseLines("accessible(\n  class\n  SomeClass ) extra")
+			);
+		}
+
+		@Test
+		public void lowVersionThrows() {
+			assertFormatError(
+					"Multiline directives require classTweaker v3+",
+					() -> parse("classTweaker v2 namespace\naccessible(\n  class\n  SomeClass )")
+			);
 		}
 	}
 
